@@ -23,7 +23,10 @@ function App() {
     <PaperProvider>
       <StatusBar barStyle="light-content" backgroundColor="#050019" />
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator
+          initialRouteName="Home"
+          screenOptions={{ headerShown: false }}
+        >
           <Stack.Screen
             name="Home"
             component={HomeScreen}

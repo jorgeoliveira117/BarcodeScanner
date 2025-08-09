@@ -16,12 +16,23 @@ const ScannerScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     const checkPermissions = async () => {
-      const cameraPermission = await Camera.getCameraPermissionStatus();
-      if (cameraPermission === 'granted') {
-        setHasPermission(true);
-      } else {
-        const newCameraPermission = await Camera.requestCameraPermission();
-        setHasPermission(newCameraPermission === 'granted');
+      try {
+        const cameraPermission = await Camera.getCameraPermissionStatus();
+        console.log('Current camera permission:', cameraPermission);
+
+        if (cameraPermission === 'granted') {
+          setHasPermission(true);
+        } else if (cameraPermission === 'not-determined') {
+          const newCameraPermission = await Camera.requestCameraPermission();
+          console.log('New camera permission:', newCameraPermission);
+          setHasPermission(newCameraPermission === 'granted');
+        } else {
+          // Permission was denied, show explanation
+          setHasPermission(false);
+        }
+      } catch (error) {
+        console.error('Error checking camera permissions:', error);
+        setHasPermission(false);
       }
     };
     checkPermissions();
@@ -66,11 +77,37 @@ const ScannerScreen = ({ navigation }: any) => {
     },
   });
 
+  const requestPermission = async () => {
+    try {
+      const permission = await Camera.requestCameraPermission();
+      console.log('Manual permission request result:', permission);
+      setHasPermission(permission === 'granted');
+    } catch (error) {
+      console.error('Error requesting camera permission:', error);
+    }
+  };
+
   if (!hasPermission) {
     return (
-      <View style={styles.container}>
-        <Text>Camera permission is required to scan barcodes</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()}>
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>
+          Camera permission is required to scan barcodes
+        </Text>
+        <Text style={styles.permissionSubtext}>
+          Please grant camera access to continue
+        </Text>
+        <Button
+          mode="contained"
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
+          Grant Camera Permission
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.goBack()}
+          style={styles.permissionButton}
+        >
           Go Back
         </Button>
       </View>
@@ -146,6 +183,31 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 50,
     marginHorizontal: 20,
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  permissionText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    color: '#333',
+  },
+  permissionSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#666',
+  },
+  permissionButton: {
+    marginVertical: 8,
+    paddingVertical: 5,
+    minWidth: 200,
   },
 });
 
