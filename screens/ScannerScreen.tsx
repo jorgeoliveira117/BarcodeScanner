@@ -19,6 +19,7 @@ const ScannerScreen = ({ navigation }: any) => {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [isScanningActive, setIsScanningActive] = useState(true);
   const devices = useCameraDevices();
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
@@ -156,9 +157,11 @@ const ScannerScreen = ({ navigation }: any) => {
       'upc-e',
     ],
     onCodeScanned: async codes => {
-      if (codes.length > 0 && isActive) {
+      if (!isScanningActive) return;
+
+      if (codes.length > 0 && isScanningActive) {
         const scannedCode = codes[0];
-        setIsActive(false);
+        setIsScanningActive(false);
 
         // Capture photo when barcode is detected
         const photoPath = await capturePhoto();
@@ -177,7 +180,7 @@ const ScannerScreen = ({ navigation }: any) => {
           [
             {
               text: 'Scan Another',
-              onPress: () => setIsActive(true),
+              onPress: () => setIsScanningActive(true),
             },
             {
               text: 'Go to History',
