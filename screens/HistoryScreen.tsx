@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Alert, Share } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, Share, TouchableOpacity, Image } from 'react-native';
 import {
   Button,
   Card,
@@ -77,6 +77,22 @@ const HistoryScreen = ({ navigation }: any) => {
     );
   };
 
+  const showPhotoModal = (photoPath?: string, barcodeValue?: string) => {
+    if (!photoPath) return;
+    
+    Alert.alert(
+      'Barcode Photo',
+      `Photo for: ${barcodeValue}\n\nSaved at: ${photoPath}`,
+      [
+        {
+          text: 'Share Photo',
+          onPress: () => Share.share({ url: `file://${photoPath}` }),
+        },
+        { text: 'Close' }
+      ]
+    );
+  };
+
   const renderBarcodeItem = ({ item }: { item: Barcode }) => (
     <Card style={styles.card}>
       <Card.Content>
@@ -87,6 +103,21 @@ const HistoryScreen = ({ navigation }: any) => {
           </Text>
         </View>
         <Text style={styles.barcodeValue}>{item.value}</Text>
+        
+        {/* Add photo display */}
+        {item.photoPath && (
+          <TouchableOpacity 
+            style={styles.photoContainer}
+            onPress={() => showPhotoModal(item.photoPath, item.value)}
+          >
+            <Image
+              source={{ uri: `file://${item.photoPath}` }}
+              style={styles.thumbnail}
+              resizeMode="cover"
+            />
+            <Text style={styles.photoLabel}>📷 Tap to view photo</Text>
+          </TouchableOpacity>
+        )}
       </Card.Content>
     </Card>
   );
@@ -204,6 +235,24 @@ const styles = StyleSheet.create({
   barcodeValue: {
     fontSize: 16,
     fontFamily: 'monospace',
+  },
+  photoContainer: {
+    marginTop: 10,
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+  photoLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   emptyContainer: {
     flex: 1,
