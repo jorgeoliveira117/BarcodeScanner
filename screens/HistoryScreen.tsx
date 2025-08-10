@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, FlatList, Alert, Share } from "react-native";
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, Alert, Share } from 'react-native';
 import {
   Button,
   Card,
@@ -7,21 +7,22 @@ import {
   FAB,
   Searchbar,
   IconButton,
-} from "react-native-paper";
-import { getBarcodes, clearAllBarcodes, exportToCSV } from "../utils/storage";
-import { format } from "date-fns";
+} from 'react-native-paper';
+import { getBarcodes, clearAllBarcodes, exportToCSV } from '../utils/storage';
+import { format } from 'date-fns';
 
 interface Barcode {
   id: string;
   value: string;
   type: string;
   timestamp: string;
+  photoPath?: string;
 }
 
 const HistoryScreen = ({ navigation }: any) => {
   const [barcodes, setBarcodes] = useState<Barcode[]>([]);
   const [filteredBarcodes, setFilteredBarcodes] = useState<Barcode[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadBarcodes();
@@ -30,9 +31,9 @@ const HistoryScreen = ({ navigation }: any) => {
   useEffect(() => {
     // Filter barcodes based on search query
     const filtered = barcodes.filter(
-      (barcode) =>
+      barcode =>
         barcode.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        barcode.type.toLowerCase().includes(searchQuery.toLowerCase())
+        barcode.type.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     setFilteredBarcodes(filtered);
   }, [searchQuery, barcodes]);
@@ -45,34 +46,34 @@ const HistoryScreen = ({ navigation }: any) => {
   const handleExport = async () => {
     try {
       const csvPath = await exportToCSV(barcodes);
-      Alert.alert("Export Successful", `CSV file created at: ${csvPath}`, [
+      Alert.alert('Export Successful', `CSV file created at: ${csvPath}`, [
         {
-          text: "Share",
+          text: 'Share',
           onPress: () => Share.share({ url: `file://${csvPath}` }),
         },
-        { text: "OK" },
+        { text: 'OK' },
       ]);
     } catch (error) {
-      Alert.alert("Export Failed", "Failed to export CSV file");
-      console.error("Export error:", error);
+      Alert.alert('Export Failed', 'Failed to export CSV file');
+      console.error('Export error:', error);
     }
   };
 
   const handleClearAll = () => {
     Alert.alert(
-      "Clear All Barcodes",
-      "Are you sure you want to delete all scanned barcodes? This cannot be undone.",
+      'Clear All Barcodes',
+      'Are you sure you want to delete all scanned barcodes? This cannot be undone.',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete All",
-          style: "destructive",
+          text: 'Delete All',
+          style: 'destructive',
           onPress: async () => {
             await clearAllBarcodes();
             setBarcodes([]);
           },
         },
-      ]
+      ],
     );
   };
 
@@ -82,7 +83,7 @@ const HistoryScreen = ({ navigation }: any) => {
         <View style={styles.cardHeader}>
           <Text style={styles.barcodeType}>{item.type.toUpperCase()}</Text>
           <Text style={styles.timestamp}>
-            {format(new Date(item.timestamp), "MMM dd, yyyy HH:mm")}
+            {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
           </Text>
         </View>
         <Text style={styles.barcodeValue}>{item.value}</Text>
@@ -123,12 +124,12 @@ const HistoryScreen = ({ navigation }: any) => {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             {barcodes.length === 0
-              ? "No barcodes scanned yet"
-              : "No barcodes match your search"}
+              ? 'No barcodes scanned yet'
+              : 'No barcodes match your search'}
           </Text>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate("Scanner")}
+            onPress={() => navigation.navigate('Scanner')}
             style={styles.scanButton}
           >
             Start Scanning
@@ -138,7 +139,7 @@ const HistoryScreen = ({ navigation }: any) => {
         <FlatList
           data={filteredBarcodes}
           renderItem={renderBarcodeItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           style={styles.list}
         />
       )}
@@ -146,7 +147,7 @@ const HistoryScreen = ({ navigation }: any) => {
       <FAB
         icon="qrcode-scan"
         style={styles.fab}
-        onPress={() => navigation.navigate("Scanner")}
+        onPress={() => navigation.navigate('Scanner')}
       />
     </View>
   );
@@ -155,24 +156,24 @@ const HistoryScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
   searchbar: {
     margin: 16,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
   countText: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   headerButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
   },
   list: {
     flex: 1,
@@ -182,49 +183,49 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   barcodeType: {
     fontSize: 12,
-    fontWeight: "bold",
-    color: "#6200ea",
-    backgroundColor: "#e8eaf6",
+    fontWeight: 'bold',
+    color: '#6200ea',
+    backgroundColor: '#e8eaf6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   timestamp: {
     fontSize: 12,
-    color: "#666",
+    color: '#666',
   },
   barcodeValue: {
     fontSize: 16,
-    fontFamily: "monospace",
+    fontFamily: 'monospace',
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 40,
   },
   emptyText: {
     fontSize: 16,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: 20,
-    color: "#666",
+    color: '#666',
   },
   scanButton: {
     paddingVertical: 5,
   },
   fab: {
-    position: "absolute",
+    position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: "#6200ea",
+    backgroundColor: '#6200ea',
   },
 });
 

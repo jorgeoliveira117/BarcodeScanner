@@ -6,6 +6,7 @@ export interface Barcode {
   value: string;
   type: string;
   timestamp: string;
+  photoPath?: string;
 }
 
 const STORAGE_KEY = 'barcodes';
