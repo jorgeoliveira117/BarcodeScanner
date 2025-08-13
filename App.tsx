@@ -3,7 +3,7 @@ import React from 'react';
 import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 
 import HomeScreen from './screens/HomeScreen';
 import ScannerScreen from './screens/ScannerScreen';
@@ -25,9 +25,23 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const theme = {
+  ...DefaultTheme,
+  roundness: 2,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#266DD3',
+    accent: '#70A288',
+    background: '#050019',
+    text: '#F7F7FF',
+    success: '#70A288',
+    error: '#ED6A5A',
+  },
+};
+
 function App() {
   return (
-    <PaperProvider>
+    <PaperProvider theme={theme}>
       <StatusBar barStyle="light-content" backgroundColor="#050019" />
       <NavigationContainer>
         <Stack.Navigator

@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Button, Card, Title, Paragraph, Text } from 'react-native-paper';
+import {
+  Button,
+  Card,
+  Title,
+  Paragraph,
+  Text,
+  useTheme,
+  Icon,
+} from 'react-native-paper';
 import { getSessions, Session, getSessionById } from '../utils/storage';
 import {
   getActiveSessionId,
@@ -9,6 +17,7 @@ import {
 } from '../utils/activeSession';
 
 const HomeScreen = ({ navigation }: any) => {
+  const theme = useTheme();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [activeSessionData, setActiveSessionData] =
@@ -87,41 +96,48 @@ const HomeScreen = ({ navigation }: any) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title>Barcode Scanner</Title>
-          <Paragraph>
-            Organize your scans into sessions. Create, manage, and track your
-            barcode scanning activities.
-          </Paragraph>
-
-          {activeSession && activeSessionData && (
-            <View style={styles.activeSessionContainer}>
-              <Text style={styles.activeSessionLabel}>Active Session:</Text>
-              <Text style={styles.activeSessionName}>{activeSession.name}</Text>
-              <Text style={styles.activeSessionDetails}>
-                📍 {activeSession.location} • 📊 {activeSession.barcodes.length}{' '}
-                codes
-              </Text>
-              <Text style={styles.lastAccessedText}>
-                Last accessed:{' '}
-                {formatLastAccessed(activeSessionData.lastAccessed)}
+    <View style={styles(theme).container}>
+      <Text variant="displaySmall" style={styles(theme).title}>
+        Barcode Scanner
+      </Text>
+      <Text variant="bodyMedium" style={styles(theme).subtitle}>
+        Organize your scans into sessions. Create, manage, and track your
+        barcode scanning activities.
+      </Text>
+      {activeSession && activeSessionData && (
+        <View style={styles(theme).activeSessionContainer}>
+          <Text style={styles(theme).activeSessionLabel}>Active Session:</Text>
+          <Text style={styles(theme).activeSessionName}>
+            {activeSession.name}
+          </Text>
+          <View style={styles(theme).activeSessionDetails}>
+            <View style={styles(theme).detailItem}>
+              <Icon source="map-marker" size={16} />
+              <Text>{activeSession.location}</Text>
+            </View>
+            <View style={styles(theme).detailItem}>
+              <Icon source="counter" size={16} />
+              <Text>
+                {activeSession.barcodes.length}{' '}
+                {activeSession.barcodes.length === 1 ? 'code' : 'codes'}
               </Text>
             </View>
-          )}
-        </Card.Content>
-      </Card>
+          </View>
+          <Text style={styles(theme).lastAccessedText}>
+            Last accessed: {formatLastAccessed(activeSessionData.lastAccessed)}
+          </Text>
+        </View>
+      )}
 
-      <View style={styles.buttonContainer}>
+      <View style={styles(theme).buttonContainer}>
         <Button
           mode="contained"
           onPress={handleResumeSession}
           style={[
-            styles.button,
+            styles(theme).button,
             activeSession
-              ? styles.resumeButtonActive
-              : styles.resumeButtonInactive,
+              ? styles(theme).resumeButtonActive
+              : styles(theme).resumeButtonInactive,
           ]}
           icon={activeSession ? 'play' : 'view-list'}
           disabled={!activeSession}
@@ -132,7 +148,7 @@ const HomeScreen = ({ navigation }: any) => {
         <Button
           mode="contained"
           onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
-          style={styles.button}
+          style={styles(theme).button}
           icon="plus"
         >
           Create Session
@@ -141,7 +157,7 @@ const HomeScreen = ({ navigation }: any) => {
         <Button
           mode="outlined"
           onPress={() => navigation.navigate('SessionsList')}
-          style={styles.button}
+          style={styles(theme).button}
           icon="view-list"
         >
           All Sessions
@@ -150,7 +166,7 @@ const HomeScreen = ({ navigation }: any) => {
         <Button
           mode="outlined"
           onPress={() => navigation.navigate('Settings')}
-          style={styles.button}
+          style={styles(theme).button}
           icon="cog"
         >
           Settings
@@ -160,66 +176,84 @@ const HomeScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#050019',
-  },
-  card: {
-    marginBottom: 30,
-  },
-  buttonContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  button: {
-    marginVertical: 10,
-    paddingVertical: 5,
-  },
-  resumeButtonActive: {
-    backgroundColor: '#2e7d32', // Green for active session
-  },
-  resumeButtonInactive: {
-    backgroundColor: '#757575', // Gray for no active session
-  },
-  activeSessionContainer: {
-    marginTop: 15,
-    padding: 12,
-    backgroundColor: '#f3e5f5',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#6200ea',
-  },
-  activeSessionLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#6200ea',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  activeSessionName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 2,
-  },
-  activeSessionDetails: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 4,
-  },
-  lastAccessedText: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  activeSessionText: {
-    marginTop: 10,
-    fontStyle: 'italic',
-    color: '#6200ea',
-  },
-});
+const styles = (theme: any) =>
+  StyleSheet.create({
+    title: {
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    subtitle: {
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    container: {
+      flex: 1,
+      padding: 20,
+      backgroundColor: theme.colors.background,
+    },
+    card: {
+      marginBottom: 30,
+    },
+    buttonContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    button: {
+      marginVertical: 10,
+      paddingVertical: 5,
+    },
+    resumeButtonActive: {
+      backgroundColor: theme.colors.success,
+    },
+    resumeButtonInactive: {
+      backgroundColor: '#2F4858',
+    },
+    activeSessionContainer: {
+      marginTop: 15,
+      padding: 12,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      borderLeftWidth: 4,
+      borderLeftColor: theme.colors.primary,
+    },
+    activeSessionLabel: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    activeSessionName: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.background,
+      marginTop: 2,
+    },
+    activeSessionDetails: {
+      fontSize: 14,
+      color: theme.colors.background,
+      marginTop: 4,
+      display: 'flex',
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
+    },
+    detailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+    },
+    lastAccessedText: {
+      fontSize: 11,
+      color: theme.colors.background,
+      marginTop: 4,
+      fontStyle: 'italic',
+    },
+    activeSessionText: {
+      marginTop: 10,
+      fontStyle: 'italic',
+      color: theme.colors.primary,
+    },
+  });
 
 export default HomeScreen;
