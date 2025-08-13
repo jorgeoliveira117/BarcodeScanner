@@ -46,7 +46,7 @@ const SessionsListScreen = ({ navigation }: any) => {
   };
 
   const handleEditSession = (session: Session) => {
-    navigation.navigate('EditSession', { session });
+    navigation.navigate('SessionForm', { session, mode: 'edit' });
   };
 
   const renderSessionItem = ({ item }: { item: Session }) => (
@@ -133,7 +133,9 @@ const SessionsListScreen = ({ navigation }: any) => {
           <Text style={styles.emptyText}>No sessions created yet</Text>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('CreateSession')}
+            onPress={() =>
+              navigation.navigate('SessionForm', { mode: 'create' })
+            }
             style={styles.createButton}
           >
             Create Your First Session
@@ -151,7 +153,7 @@ const SessionsListScreen = ({ navigation }: any) => {
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => navigation.navigate('CreateSession')}
+        onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
       />
     </View>
   );

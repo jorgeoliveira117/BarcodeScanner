@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation }: any) => {
 
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('CreateSession')}
+          onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
           style={styles.button}
           icon="plus"
         >

@@ -9,22 +9,39 @@ import {
   Switch,
   HelperText,
 } from 'react-native-paper';
-import { BARCODE_TYPES, modifySession, Session } from '../utils/storage';
-import { Code, CodeType } from 'react-native-vision-camera';
+import {
+  BARCODE_TYPES,
+  createSession,
+  modifySession,
+  Session,
+} from '../utils/storage';
+import { CodeType } from 'react-native-vision-camera';
 
-const EditSessionScreen = ({ route, navigation }: any) => {
-  const { session }: { session: Session } = route.params;
+interface SessionFormScreenProps {
+  route: {
+    params?: {
+      session?: Session;
+      mode: 'create' | 'edit';
+    };
+  };
+  navigation: any;
+}
 
-  const [name, setName] = useState(session.name);
-  const [location, setLocation] = useState(session.location);
+const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
+  const { session, mode } = route.params || { mode: 'create' };
+  const isEditMode = mode === 'edit';
+
+  // Initialize form values based on mode
+  const [name, setName] = useState(session?.name || '');
+  const [location, setLocation] = useState(session?.location || '');
   const [expectedCodes, setExpectedCodes] = useState(
-    session.expectedCodes.toString(),
+    session?.expectedCodes?.toString() || '',
   );
   const [expectedCodeTypes, setExpectedCodeTypes] = useState<CodeType[]>(
-    session.expectedCodeTypes,
+    session?.expectedCodeTypes || [],
   );
   const [autosavePictures, setAutosavePictures] = useState(
-    session.autosavePictures,
+    session?.autosavePictures || false,
   );
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,7 +82,7 @@ const EditSessionScreen = ({ route, navigation }: any) => {
     return Object.values(newErrors).every(error => error === '');
   };
 
-  const handleSaveSession = async () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
@@ -73,27 +90,64 @@ const EditSessionScreen = ({ route, navigation }: any) => {
     setIsLoading(true);
 
     try {
-      await modifySession(session.id, {
-        name: name.trim(),
-        location: location.trim(),
-        expectedCodeTypes,
-        expectedCodes: parseInt(expectedCodes),
-        autosavePictures,
-      });
+      if (isEditMode && session) {
+        // Edit existing session
+        await modifySession(session.id, {
+          name: name.trim(),
+          location: location.trim(),
+          expectedCodeTypes,
+          expectedCodes: parseInt(expectedCodes),
+          autosavePictures,
+        });
 
-      Alert.alert(
-        'Session Updated',
-        `Session "${name}" has been updated successfully!`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ],
-      );
+        Alert.alert(
+          'Session Updated',
+          `Session "${name}" has been updated successfully!`,
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ],
+        );
+      } else {
+        // Create new session
+        const newSession = await createSession({
+          name: name.trim(),
+          folderName: '', // This will be auto-generated
+          location: location.trim(),
+          expectedCodeTypes,
+          expectedCodes: parseInt(expectedCodes),
+          autosavePictures,
+        });
+
+        Alert.alert(
+          'Session Created',
+          `Session "${newSession.name}" has been created successfully!`,
+          [
+            {
+              text: 'Start Scanning',
+              onPress: () =>
+                navigation.navigate('Scanner', { sessionId: newSession.id }),
+            },
+            {
+              text: 'Go to Sessions',
+              onPress: () => navigation.navigate('SessionsList'),
+            },
+          ],
+        );
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update session. Please try again.');
-      console.error('Error updating session:', error);
+      Alert.alert(
+        'Error',
+        `Failed to ${
+          isEditMode ? 'update' : 'create'
+        } session. Please try again.`,
+      );
+      console.error(
+        `Error ${isEditMode ? 'updating' : 'creating'} session:`,
+        error,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -109,22 +163,30 @@ const EditSessionScreen = ({ route, navigation }: any) => {
     <ScrollView style={styles.container}>
       <Card style={styles.card}>
         <Card.Content>
-          <Text style={styles.title}>Edit Session</Text>
+          <Text style={styles.title}>
+            {isEditMode ? 'Edit Session' : 'Create New Session'}
+          </Text>
 
-          <View style={styles.readOnlyContainer}>
-            <Text style={styles.readOnlyLabel}>Session ID:</Text>
-            <Text style={styles.readOnlyValue}>{session.id}</Text>
-          </View>
+          {isEditMode && session && (
+            <>
+              <View style={styles.readOnlyContainer}>
+                <Text style={styles.readOnlyLabel}>Session ID:</Text>
+                <Text style={styles.readOnlyValue}>{session.id}</Text>
+              </View>
 
-          <View style={styles.readOnlyContainer}>
-            <Text style={styles.readOnlyLabel}>Folder Name:</Text>
-            <Text style={styles.readOnlyValue}>{session.folderName}</Text>
-          </View>
+              <View style={styles.readOnlyContainer}>
+                <Text style={styles.readOnlyLabel}>Folder Name:</Text>
+                <Text style={styles.readOnlyValue}>{session.folderName}</Text>
+              </View>
 
-          <View style={styles.readOnlyContainer}>
-            <Text style={styles.readOnlyLabel}>Barcodes Scanned:</Text>
-            <Text style={styles.readOnlyValue}>{session.barcodes.length}</Text>
-          </View>
+              <View style={styles.readOnlyContainer}>
+                <Text style={styles.readOnlyLabel}>Barcodes Scanned:</Text>
+                <Text style={styles.readOnlyValue}>
+                  {session.barcodes.length}
+                </Text>
+              </View>
+            </>
+          )}
 
           <TextInput
             label="Session Name *"
@@ -207,12 +269,12 @@ const EditSessionScreen = ({ route, navigation }: any) => {
             </Button>
             <Button
               mode="contained"
-              onPress={handleSaveSession}
-              style={styles.saveButton}
+              onPress={handleSubmit}
+              style={styles.submitButton}
               loading={isLoading}
               disabled={isLoading}
             >
-              Save Changes
+              {isEditMode ? 'Save Changes' : 'Create Session'}
             </Button>
           </View>
         </Card.Content>
@@ -300,9 +362,9 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
   },
-  saveButton: {
+  submitButton: {
     flex: 1,
   },
 });
 
-export default EditSessionScreen;
+export default SessionFormScreen;
