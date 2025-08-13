@@ -5,13 +5,14 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
+  Animated,
 } from 'react-native';
 import {
   Camera,
   useCameraDevices,
   useCodeScanner,
 } from 'react-native-vision-camera';
-import { Button, Text, Card } from 'react-native-paper';
+import { Button, Text, Card, Snackbar } from 'react-native-paper';
 import {
   addBarcodeToSession,
   BARCODE_TYPES,
@@ -27,9 +28,28 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isScanningActive, setIsScanningActive] = useState(true);
+
+  // Notification system state
+  const [notification, setNotification] = useState<{
+    visible: boolean;
+    message: string;
+    type: 'success' | 'warning' | 'error';
+    actions?: Array<{ text: string; onPress: () => void }>;
+  }>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
+  const [pendingBarcode, setPendingBarcode] = useState<{
+    value: string;
+    type: string;
+    photoPath?: string;
+  } | null>(null);
+
   const devices = useCameraDevices();
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (sessionId) {
@@ -49,6 +69,15 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }
   }, [sessionId]);
 
+  // Cleanup cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) {
+        clearTimeout(cooldownRef.current);
+      }
+    };
+  }, []);
+
   const loadSession = async () => {
     if (!sessionId) return;
 
@@ -67,6 +96,84 @@ const ScannerScreen = ({ route, navigation }: any) => {
         ],
       );
     }
+  };
+
+  // Helper functions for the new notification system
+  const showNotification = (
+    message: string,
+    type: 'success' | 'warning' | 'error' = 'success',
+    actions?: Array<{ text: string; onPress: () => void }>,
+  ) => {
+    setNotification({
+      visible: true,
+      message,
+      type,
+      actions,
+    });
+
+    // Auto-hide notification after 3 seconds if no actions
+    if (!actions) {
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, visible: false }));
+        startScanCooldown();
+      }, 3000);
+    }
+  };
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, visible: false }));
+    startScanCooldown();
+  };
+
+  const startScanCooldown = () => {
+    // Clear any existing cooldown
+    if (cooldownRef.current) {
+      clearTimeout(cooldownRef.current);
+    }
+
+    // Start 3-second cooldown
+    cooldownRef.current = setTimeout(() => {
+      setIsScanningActive(true);
+      cooldownRef.current = null;
+    }, 3000);
+  };
+
+  const checkForDuplicateBarcode = (value: string): boolean => {
+    if (!session) return false;
+    return session.barcodes.some(barcode => barcode.value === value);
+  };
+
+  const addBarcodeAnyway = async (barcodeData?: {
+    value: string;
+    type: string;
+    photoPath?: string;
+  }) => {
+    console.log('🔧 addBarcodeAnyway called');
+    console.log('📋 pendingBarcode:', pendingBarcode);
+    if (!barcodeData || !sessionId) return;
+
+    try {
+      await addBarcodeToSession(sessionId, {
+        value: barcodeData.value,
+        type: barcodeData.type as any,
+        timestamp: new Date().toISOString(),
+        photoPath: barcodeData.photoPath,
+      });
+
+      await loadSession();
+      showNotification('✅ Barcode added to session!', 'success');
+      setPendingBarcode(null);
+    } catch (error) {
+      console.error('Error adding barcode to session:', error);
+      showNotification('❌ Failed to add barcode', 'error');
+      setPendingBarcode(null);
+      startScanCooldown();
+    }
+  };
+
+  const ignorePendingBarcode = () => {
+    setPendingBarcode(null);
+    startScanCooldown();
   };
 
   const createAppFolder = async () => {
@@ -267,10 +374,16 @@ const ScannerScreen = ({ route, navigation }: any) => {
         const scannedCode = codes[0];
         setIsScanningActive(false);
 
+        const barcodeValue = scannedCode.value || '';
+        const barcodeType = scannedCode.type || 'unknown';
+
+        // Check for duplicate barcode
+        const isDuplicate = checkForDuplicateBarcode(barcodeValue);
+
         // Check if the scanned barcode type is expected for this session
         const isExpectedType =
-          scannedCode.type !== 'unknown' &&
-          session.expectedCodeTypes.includes(scannedCode.type);
+          barcodeType !== 'unknown' &&
+          session.expectedCodeTypes.includes(barcodeType);
 
         // Capture photo when barcode is detected (if auto-save is enabled)
         let photoPath = null;
@@ -278,10 +391,65 @@ const ScannerScreen = ({ route, navigation }: any) => {
           photoPath = await capturePhoto();
         }
 
+        // Handle duplicate barcodes
+        if (isDuplicate) {
+          const currentBarcodeData = {
+            value: barcodeValue,
+            type: barcodeType,
+            photoPath: photoPath || undefined,
+          };
+
+          Alert.alert(
+            `⚠️ Duplicate barcode found!\nValue: ${barcodeValue}`,
+            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}`,
+            [
+              {
+                text: 'Add Anyways',
+                onPress: () => {
+                  addBarcodeAnyway(currentBarcodeData);
+                },
+              },
+              {
+                text: 'Ignore Code',
+                onPress: () => ignorePendingBarcode(),
+              },
+            ],
+          );
+          return;
+        }
+
+        // Handle unexpected barcode types
+        if (!isExpectedType) {
+          const currentBarcodeData = {
+            value: barcodeValue,
+            type: barcodeType,
+            photoPath: photoPath || undefined,
+          };
+
+          Alert.alert(
+            `⚠️ Unexpected barcode type: ${barcodeType}\nValue: ${barcodeValue}`,
+            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}`,
+            [
+              {
+                text: 'Add Anyways',
+                onPress: () => {
+                  addBarcodeAnyway(currentBarcodeData);
+                },
+              },
+              {
+                text: 'Ignore Code',
+                onPress: () => ignorePendingBarcode(),
+              },
+            ],
+          );
+          return;
+        }
+
+        // Normal case - add barcode directly
         try {
           await addBarcodeToSession(sessionId, {
-            value: scannedCode.value || '',
-            type: (scannedCode.type?.toUpperCase() || '') as any,
+            value: barcodeValue,
+            type: barcodeType as any,
             timestamp: new Date().toISOString(),
             photoPath: photoPath || undefined,
           });
@@ -289,40 +457,21 @@ const ScannerScreen = ({ route, navigation }: any) => {
           // Reload session to get updated barcode count
           await loadSession();
 
-          const typeWarning = !isExpectedType
-            ? '\n⚠️ Unexpected barcode type!'
-            : '';
           const photoStatus = session.autosavePictures
             ? photoPath
-              ? '\n📷 Photo saved!'
-              : '\n⚠️ Photo save failed'
+              ? ' 📷'
+              : ' ⚠️ Photo failed'
             : '';
 
-          Alert.alert(
-            'Barcode Scanned!',
-            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}${typeWarning}${photoStatus}`,
-            [
-              {
-                text: 'Scan Another',
-                onPress: () => setIsScanningActive(true),
-              },
-              {
-                text: 'View Session History',
-                onPress: () => navigation.navigate('History', { sessionId }),
-              },
-            ],
+          showNotification(
+            `✅ Barcode added! ${barcodeType}${photoStatus}`,
+            'success',
           );
         } catch (error) {
           console.error('Error saving barcode to session:', error);
-          Alert.alert(
-            'Error',
-            'Failed to save barcode to session. Please try again.',
-            [
-              {
-                text: 'Try Again',
-                onPress: () => setIsScanningActive(true),
-              },
-            ],
+          showNotification(
+            '❌ Failed to save barcode. Please try again.',
+            'error',
           );
         }
       }
@@ -446,6 +595,46 @@ const ScannerScreen = ({ route, navigation }: any) => {
           </Button>
         </View>
       </View>
+
+      {/* Notification System */}
+      <Snackbar
+        visible={notification.visible}
+        onDismiss={hideNotification}
+        duration={notification.actions ? 0 : 3000} // Don't auto-hide if actions are present
+        action={
+          notification.actions
+            ? {
+                label: notification.actions[0].text,
+                onPress: notification.actions[0].onPress,
+              }
+            : undefined
+        }
+        style={[
+          styles.snackbar,
+          notification.type === 'error' && styles.errorSnackbar,
+          notification.type === 'warning' && styles.warningSnackbar,
+          notification.type === 'success' && styles.successSnackbar,
+        ]}
+      >
+        <View style={styles.snackbarContent}>
+          <Text style={styles.snackbarText}>{notification.message}</Text>
+          {notification.actions && notification.actions.length > 1 && (
+            <View style={styles.snackbarActions}>
+              {notification.actions.map((action, index) => (
+                <Button
+                  key={index}
+                  mode="text"
+                  onPress={action.onPress}
+                  textColor="#fff"
+                  style={styles.snackbarActionButton}
+                >
+                  {action.text}
+                </Button>
+              ))}
+            </View>
+          )}
+        </View>
+      </Snackbar>
     </View>
   );
 };
@@ -558,6 +747,41 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingVertical: 5,
     minWidth: 200,
+  },
+  // Notification system styles
+  snackbar: {
+    position: 'absolute',
+    bottom: 100,
+    left: 16,
+    right: 16,
+    borderRadius: 8,
+  },
+  errorSnackbar: {
+    backgroundColor: '#d32f2f',
+  },
+  warningSnackbar: {
+    backgroundColor: '#f57c00',
+  },
+  successSnackbar: {
+    backgroundColor: '#2e7d32',
+  },
+  snackbarContent: {
+    flexDirection: 'column',
+  },
+  snackbarText: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  snackbarActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+    gap: 8,
+  },
+  snackbarActionButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
 });
 
