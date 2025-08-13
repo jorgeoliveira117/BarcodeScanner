@@ -23,6 +23,7 @@ import {
 } from '../utils/storage';
 import { getSettings, AppSettings } from '../utils/settings';
 import RNFS from 'react-native-fs';
+import Sound from 'react-native-sound';
 
 const ScannerScreen = ({ route, navigation }: any) => {
   const { sessionId } = route.params || {};
@@ -37,6 +38,10 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isScanningActive, setIsScanningActive] = useState(true);
+
+  // Sound refs
+  const successSoundRef = useRef<Sound | null>(null);
+  const errorSoundRef = useRef<Sound | null>(null);
 
   // Notification system state
   const [notification, setNotification] = useState<{
@@ -62,6 +67,8 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
   useEffect(() => {
     loadSettings();
+    initializeSounds();
+
     if (sessionId) {
       loadSession();
     } else {
@@ -157,7 +164,80 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }, settings.scanCooldown);
   };
 
+  const initializeSounds = () => {
+    // Enable playback in silence mode (iOS)
+    Sound.setCategory('Playback');
+
+    // Load success sound (beep)
+    successSoundRef.current = new Sound(
+      'success.wav',
+      Sound.MAIN_BUNDLE,
+      error => {
+        if (error) {
+          console.log('Failed to load success sound', error);
+          // Fallback to system sound
+          successSoundRef.current = new Sound(
+            'beep.wav',
+            Sound.MAIN_BUNDLE,
+            fallbackError => {
+              if (fallbackError) {
+                console.log(
+                  'Failed to load fallback success sound',
+                  fallbackError,
+                );
+                successSoundRef.current = null;
+              }
+            },
+          );
+        }
+      },
+    );
+
+    // Load error sound
+    errorSoundRef.current = new Sound(
+      'error-sound.wav',
+      Sound.MAIN_BUNDLE,
+      error => {
+        if (error) {
+          console.log('Failed to load error sound', error);
+          // Fallback to system sound
+          errorSoundRef.current = new Sound(
+            'error.wav',
+            Sound.MAIN_BUNDLE,
+            fallbackError => {
+              if (fallbackError) {
+                console.log(
+                  'Failed to load fallback error sound',
+                  fallbackError,
+                );
+                errorSoundRef.current = null;
+              }
+            },
+          );
+        }
+      },
+    );
+  };
+
+  const playSound = (isError = false) => {
+    const soundRef = isError ? errorSoundRef.current : successSoundRef.current;
+
+    if (soundRef && settings.volume > 0) {
+      // Set volume based on user settings (0.0 to 1.0)
+      soundRef.setVolume(settings.volume);
+
+      // Play the sound
+      soundRef.play(success => {
+        if (!success) {
+          console.log('Sound playback failed');
+        }
+      });
+    }
+  };
+
   const triggerFeedback = (error = false) => {
+    playSound(error);
+
     if (settings.vibrationEnabled) {
       // Try haptic feedback first (iOS and some Android devices)
       const hapticOptions = {
