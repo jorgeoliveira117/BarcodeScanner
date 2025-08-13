@@ -10,6 +10,7 @@ import ScannerScreen from './screens/ScannerScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import SessionsListScreen from './screens/SessionsListScreen';
 import SessionFormScreen from './screens/SessionFormScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import { Session } from './utils/storage';
 
 // Type definitions for navigation
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   History: { sessionId: number };
   SessionsList: undefined;
   SessionForm: { session?: Session; mode: 'create' | 'edit' };
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,6 +58,11 @@ function App() {
             name="History"
             component={HistoryScreen}
             options={{ title: 'Session History', headerShown: true }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ title: 'Settings', headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>

@@ -73,6 +73,15 @@ const HomeScreen = ({ navigation }: any) => {
         >
           Check Sessions
         </Button>
+
+        <Button
+          mode="outlined"
+          onPress={() => navigation.navigate('Settings')}
+          style={styles.button}
+          icon="cog"
+        >
+          Settings
+        </Button>
       </View>
     </View>
   );

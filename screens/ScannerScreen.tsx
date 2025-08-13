@@ -6,6 +6,7 @@ import {
   PermissionsAndroid,
   Platform,
   Animated,
+  Vibration,
 } from 'react-native';
 import {
   Camera,
@@ -13,17 +14,25 @@ import {
   useCodeScanner,
 } from 'react-native-vision-camera';
 import { Button, Text, Card, Snackbar } from 'react-native-paper';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   addBarcodeToSession,
   BARCODE_TYPES,
   getSessionById,
   Session,
 } from '../utils/storage';
+import { getSettings, AppSettings } from '../utils/settings';
 import RNFS from 'react-native-fs';
 
 const ScannerScreen = ({ route, navigation }: any) => {
   const { sessionId } = route.params || {};
   const [session, setSession] = useState<Session | null>(null);
+  const [settings, setSettings] = useState<AppSettings>({
+    volume: 0.5,
+    scanCooldown: 3000,
+    vibrationEnabled: true,
+    language: 'en',
+  });
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
@@ -52,6 +61,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    loadSettings();
     if (sessionId) {
       loadSession();
     } else {
@@ -68,6 +78,15 @@ const ScannerScreen = ({ route, navigation }: any) => {
       );
     }
   }, [sessionId]);
+
+  const loadSettings = async () => {
+    try {
+      const currentSettings = await getSettings();
+      setSettings(currentSettings);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
 
   // Cleanup cooldown timer on unmount
   useEffect(() => {
@@ -131,11 +150,32 @@ const ScannerScreen = ({ route, navigation }: any) => {
       clearTimeout(cooldownRef.current);
     }
 
-    // Start 3-second cooldown
+    // Start cooldown based on user settings
     cooldownRef.current = setTimeout(() => {
       setIsScanningActive(true);
       cooldownRef.current = null;
-    }, 3000);
+    }, settings.scanCooldown);
+  };
+
+  const triggerFeedback = (long = true) => {
+    if (settings.vibrationEnabled) {
+      // Try haptic feedback first (iOS and some Android devices)
+      const hapticOptions = {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      };
+
+      if (long) {
+        ReactNativeHapticFeedback.trigger('impactHeavy', hapticOptions);
+      } else {
+        ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
+      }
+
+      // Fallback vibration for Android devices that don't support haptic feedback
+      if (Platform.OS === 'android') {
+        Vibration.vibrate(long ? 500 : 100);
+      }
+    }
   };
 
   const checkForDuplicateBarcode = (value: string): boolean => {
@@ -153,6 +193,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
     if (!barcodeData || !sessionId) return;
 
     try {
+      // Trigger haptic feedback for successful scan
+      triggerFeedback();
+
       await addBarcodeToSession(sessionId, {
         value: barcodeData.value,
         type: barcodeData.type as any,
@@ -398,6 +441,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
             type: barcodeType,
             photoPath: photoPath || undefined,
           };
+          triggerFeedback(true);
 
           Alert.alert(
             `⚠️ Duplicate barcode found!\nValue: ${barcodeValue}`,
@@ -425,6 +469,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
             type: barcodeType,
             photoPath: photoPath || undefined,
           };
+          triggerFeedback(true);
 
           Alert.alert(
             `⚠️ Unexpected barcode type: ${barcodeType}\nValue: ${barcodeValue}`,
@@ -447,6 +492,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
         // Normal case - add barcode directly
         try {
+          // Trigger haptic feedback for successful scan
+          triggerFeedback();
+
           await addBarcodeToSession(sessionId, {
             value: barcodeValue,
             type: barcodeType as any,
