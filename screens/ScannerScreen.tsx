@@ -17,11 +17,13 @@ import { Button, Text, Card, Snackbar } from 'react-native-paper';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   addBarcodeToSession,
+  removeBarcodeFromSession,
   BARCODE_TYPES,
   getSessionById,
   Session,
 } from '../utils/storage';
 import { getSettings, AppSettings } from '../utils/settings';
+import { setActiveSession } from '../utils/activeSession';
 import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 
@@ -71,6 +73,8 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
     if (sessionId) {
       loadSession();
+      // Set this session as the active session when entering
+      setActiveSession(sessionId);
     } else {
       // No session ID provided, redirect to sessions list
       Alert.alert(
@@ -300,6 +304,39 @@ const ScannerScreen = ({ route, navigation }: any) => {
     startScanCooldown();
   };
 
+  const handleDeleteLatestBarcode = async () => {
+    if (!session || !sessionId || session.barcodes.length === 0) {
+      return;
+    }
+
+    const latestBarcode = session.barcodes[0]; // Most recent is first in array
+
+    Alert.alert(
+      'Delete Barcode',
+      `Are you sure you want to delete this barcode?\n\nType: ${latestBarcode.type}\nValue: ${latestBarcode.value}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeBarcodeFromSession(sessionId, latestBarcode.id);
+              await loadSession(); // Refresh session data
+              showNotification('🗑️ Barcode deleted successfully', 'success');
+            } catch (error) {
+              console.error('Error deleting barcode:', error);
+              showNotification('❌ Failed to delete barcode', 'error');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const createAppFolder = async () => {
     try {
       let folderPath;
@@ -476,7 +513,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
   };
 
   const getActiveCodeTypes = () => {
-    if (!session) {
+    if (!session || !session.codesToIgnore) {
       // If no session, use all available types
       return BARCODE_TYPES;
     }
@@ -695,6 +732,38 @@ const ScannerScreen = ({ route, navigation }: any) => {
           </Card>
         )}
 
+        {session && session.barcodes.length > 0 && (
+          <Card style={styles.latestBarcodeCard}>
+            <Card.Content style={styles.latestBarcodeContent}>
+              <View style={styles.latestBarcodeHeader}>
+                <Text style={styles.latestBarcodeTitle}>Latest Scan</Text>
+                <Button
+                  mode="outlined"
+                  onPress={handleDeleteLatestBarcode}
+                  style={styles.deleteButton}
+                  buttonColor="rgba(244, 67, 54, 0.1)"
+                  textColor="#f44336"
+                  icon="delete"
+                  compact
+                >
+                  Delete
+                </Button>
+              </View>
+              <View style={styles.latestBarcodeInfo}>
+                <Text style={styles.latestBarcodeType}>
+                  {session.barcodes[0].type.toUpperCase()}
+                </Text>
+                <Text style={styles.latestBarcodeValue} numberOfLines={2}>
+                  {session.barcodes[0].value}
+                </Text>
+                <Text style={styles.latestBarcodeTime}>
+                  {new Date(session.barcodes[0].timestamp).toLocaleTimeString()}
+                </Text>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
         <View style={styles.scanAreaContainer}>
           <View style={styles.scanArea} />
           <Text style={styles.instructionText}>
@@ -807,6 +876,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 4,
+  },
+  latestBarcodeCard: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 8,
+    marginHorizontal: 20,
+    marginTop: 10,
+  },
+  latestBarcodeContent: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  latestBarcodeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  latestBarcodeTitle: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  deleteButton: {
+    borderColor: '#f44336',
+    borderWidth: 1,
+  },
+  latestBarcodeInfo: {
+    alignItems: 'flex-start',
+  },
+  latestBarcodeType: {
+    color: '#4CAF50',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  latestBarcodeValue: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  latestBarcodeTime: {
+    color: '#ccc',
+    fontSize: 10,
   },
   scanAreaContainer: {
     justifyContent: 'center',

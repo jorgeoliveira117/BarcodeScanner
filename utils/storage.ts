@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { CodeType } from 'react-native-vision-camera';
+import { getActiveSessionId, clearActiveSession } from './activeSession';
 
 export const BARCODE_TYPES: CodeType[] = [
   'code-128',
@@ -254,6 +255,14 @@ export const deleteSession = async (sessionId: number): Promise<void> => {
       session => session.id !== sessionId,
     );
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(updatedSessions));
+
+    // Clear active session if the deleted session was active
+    const activeSessionId = await getActiveSessionId();
+    if (activeSessionId === sessionId) {
+      await clearActiveSession();
+    }
+
+    console.log('Session deleted successfully');
   } catch (error) {
     console.error('Error deleting session:', error);
     throw error;
