@@ -11,11 +11,18 @@ import {
   useCameraDevices,
   useCodeScanner,
 } from 'react-native-vision-camera';
-import { Button, Text } from 'react-native-paper';
-import { saveBarcodeToStorage } from '../utils/storage';
+import { Button, Text, Card } from 'react-native-paper';
+import {
+  addBarcodeToSession,
+  BARCODE_TYPES,
+  getSessionById,
+  Session,
+} from '../utils/storage';
 import RNFS from 'react-native-fs';
 
-const ScannerScreen = ({ navigation }: any) => {
+const ScannerScreen = ({ route, navigation }: any) => {
+  const { sessionId } = route.params || {};
+  const [session, setSession] = useState<Session | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
@@ -24,9 +31,55 @@ const ScannerScreen = ({ navigation }: any) => {
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
 
+  useEffect(() => {
+    if (sessionId) {
+      loadSession();
+    } else {
+      // No session ID provided, redirect to sessions list
+      Alert.alert(
+        'No Session Selected',
+        'Please select a session to start scanning.',
+        [
+          {
+            text: 'Go to Sessions',
+            onPress: () => navigation.replace('SessionsList'),
+          },
+        ],
+      );
+    }
+  }, [sessionId]);
+
+  const loadSession = async () => {
+    if (!sessionId) return;
+
+    const sessionData = await getSessionById(sessionId);
+    if (sessionData) {
+      setSession(sessionData);
+    } else {
+      Alert.alert(
+        'Session Not Found',
+        'The selected session could not be found.',
+        [
+          {
+            text: 'Go to Sessions',
+            onPress: () => navigation.replace('SessionsList'),
+          },
+        ],
+      );
+    }
+  };
+
   const createAppFolder = async () => {
     try {
-      const folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner`;
+      let folderPath;
+      if (session) {
+        // Create session-specific folder
+        folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner/${session.folderName}`;
+      } else {
+        // Fallback to general app folder
+        folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner`;
+      }
+
       const exists = await RNFS.exists(folderPath);
 
       if (!exists) {
@@ -193,46 +246,85 @@ const ScannerScreen = ({ navigation }: any) => {
 
   const codeScanner = useCodeScanner({
     codeTypes: [
-      'qr',
-      'ean-13',
-      'ean-8',
       'code-128',
       'code-39',
-      'upc-a',
+      'code-93',
+      'codabar',
+      'ean-13',
+      'ean-8',
+      'itf',
       'upc-e',
+      'upc-a',
+      'qr',
+      'pdf-417',
+      'aztec',
+      'data-matrix',
     ],
     onCodeScanned: async codes => {
-      if (!isScanningActive) return;
+      if (!isScanningActive || !session || !sessionId) return;
 
       if (codes.length > 0 && isScanningActive) {
         const scannedCode = codes[0];
         setIsScanningActive(false);
 
-        // Capture photo when barcode is detected
-        const photoPath = await capturePhoto();
+        // Check if the scanned barcode type is expected for this session
+        const isExpectedType =
+          scannedCode.type !== 'unknown' &&
+          session.expectedCodeTypes.includes(scannedCode.type);
 
-        await saveBarcodeToStorage({
-          value: scannedCode.value || '',
-          type: scannedCode.type || '',
-          timestamp: new Date().toISOString(),
-          photoPath: photoPath || undefined,
-        });
-        Alert.alert(
-          'Barcode Scanned!',
-          `Type: ${scannedCode.type}\nValue: ${scannedCode.value}${
-            photoPath ? '\n📷 Photo saved!' : '\n⚠️ Photo save failed'
-          }`,
-          [
-            {
-              text: 'Scan Another',
-              onPress: () => setIsScanningActive(true),
-            },
-            {
-              text: 'Go to History',
-              onPress: () => navigation.navigate('History'),
-            },
-          ],
-        );
+        // Capture photo when barcode is detected (if auto-save is enabled)
+        let photoPath = null;
+        if (session.autosavePictures) {
+          photoPath = await capturePhoto();
+        }
+
+        try {
+          await addBarcodeToSession(sessionId, {
+            value: scannedCode.value || '',
+            type: (scannedCode.type?.toUpperCase() || '') as any,
+            timestamp: new Date().toISOString(),
+            photoPath: photoPath || undefined,
+          });
+
+          // Reload session to get updated barcode count
+          await loadSession();
+
+          const typeWarning = !isExpectedType
+            ? '\n⚠️ Unexpected barcode type!'
+            : '';
+          const photoStatus = session.autosavePictures
+            ? photoPath
+              ? '\n📷 Photo saved!'
+              : '\n⚠️ Photo save failed'
+            : '';
+
+          Alert.alert(
+            'Barcode Scanned!',
+            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}${typeWarning}${photoStatus}`,
+            [
+              {
+                text: 'Scan Another',
+                onPress: () => setIsScanningActive(true),
+              },
+              {
+                text: 'View Session History',
+                onPress: () => navigation.navigate('History', { sessionId }),
+              },
+            ],
+          );
+        } catch (error) {
+          console.error('Error saving barcode to session:', error);
+          Alert.alert(
+            'Error',
+            'Failed to save barcode to session. Please try again.',
+            [
+              {
+                text: 'Try Again',
+                onPress: () => setIsScanningActive(true),
+              },
+            ],
+          );
+        }
       }
     },
   });
@@ -315,17 +407,44 @@ const ScannerScreen = ({ navigation }: any) => {
         photo={true}
       />
       <View style={styles.overlay}>
-        <View style={styles.scanArea} />
-        <Text style={styles.instructionText}>
-          Point your camera at a barcode
-        </Text>
-        <Button
-          mode="contained"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          Back to Home
-        </Button>
+        {session && (
+          <Card style={styles.sessionInfoCard}>
+            <Card.Content style={styles.sessionInfo}>
+              <Text style={styles.sessionName}>{session.name}</Text>
+              <Text style={styles.sessionProgress}>
+                {session.barcodes.length} / {session.expectedCodes} barcodes
+              </Text>
+              <Text style={styles.expectedTypes}>
+                Expected: {session.expectedCodeTypes.join(', ')}
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+
+        <View style={styles.scanAreaContainer}>
+          <View style={styles.scanArea} />
+          <Text style={styles.instructionText}>
+            Point your camera at a barcode
+          </Text>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('History', { sessionId })}
+            style={styles.historyButton}
+            textColor="#fff"
+          >
+            View History
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            Back
+          </Button>
+        </View>
       </View>
     </View>
   );
@@ -344,6 +463,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  sessionInfoCard: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 8,
+    marginHorizontal: 20,
+  },
+  sessionInfo: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  sessionName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  sessionProgress: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  expectedTypes: {
+    color: '#ccc',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  scanAreaContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -360,10 +511,18 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+  },
+  historyButton: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderColor: '#fff',
+  },
   backButton: {
-    position: 'absolute',
-    bottom: 50,
-    marginHorizontal: 20,
+    flex: 1,
   },
   storageButton: {
     position: 'absolute',

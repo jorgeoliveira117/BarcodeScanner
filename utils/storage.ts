@@ -1,10 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
+import { CodeType } from 'react-native-vision-camera';
+
+export const BARCODE_TYPES: CodeType[] = [
+  'code-128',
+  'code-39',
+  'code-93',
+  'codabar',
+  'ean-13',
+  'ean-8',
+  'itf',
+  'upc-e',
+  'upc-a',
+  'qr',
+  'pdf-417',
+  'aztec',
+  'data-matrix',
+];
 
 export interface Barcode {
   id: string;
   value: string;
-  type: string;
+  type: CodeType;
   timestamp: string;
   photoPath?: string;
 }
@@ -15,7 +32,7 @@ export interface Session {
   barcodes: Barcode[];
   name: string;
   location: string;
-  expectedCodeTypes: string[];
+  expectedCodeTypes: CodeType[];
   expectedCodes: number;
   autosavePictures: boolean;
 }

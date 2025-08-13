@@ -16,7 +16,13 @@ import {
   Searchbar,
   IconButton,
 } from 'react-native-paper';
-import { getBarcodes, clearAllBarcodes, exportToCSV } from '../utils/storage';
+import {
+  getBarcodesFromSession,
+  removeBarcodeFromSession,
+  exportSessionToCSV,
+  getSessionById,
+  Session,
+} from '../utils/storage';
 import { format } from 'date-fns';
 
 interface Barcode {
@@ -27,14 +33,21 @@ interface Barcode {
   photoPath?: string;
 }
 
-const HistoryScreen = ({ navigation }: any) => {
+const HistoryScreen = ({ route, navigation }: any) => {
+  const { sessionId } = route.params || {};
+  const [session, setSession] = useState<Session | null>(null);
   const [barcodes, setBarcodes] = useState<Barcode[]>([]);
   const [filteredBarcodes, setFilteredBarcodes] = useState<Barcode[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadBarcodes();
-  }, []);
+    if (sessionId) {
+      loadSessionData();
+    } else {
+      // If no sessionId provided, redirect to sessions list
+      navigation.replace('SessionsList');
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     // Filter barcodes based on search query
@@ -46,14 +59,23 @@ const HistoryScreen = ({ navigation }: any) => {
     setFilteredBarcodes(filtered);
   }, [searchQuery, barcodes]);
 
-  const loadBarcodes = async () => {
-    const savedBarcodes = await getBarcodes();
-    setBarcodes(savedBarcodes);
+  const loadSessionData = async () => {
+    if (!sessionId) return;
+
+    const sessionData = await getSessionById(sessionId);
+    setSession(sessionData);
+
+    if (sessionData) {
+      const sessionBarcodes = await getBarcodesFromSession(sessionId);
+      setBarcodes(sessionBarcodes);
+    }
   };
 
   const handleExport = async () => {
+    if (!sessionId) return;
+
     try {
-      const csvPath = await exportToCSV(barcodes);
+      const csvPath = await exportSessionToCSV(sessionId);
       Alert.alert('Export Successful', `CSV file created at: ${csvPath}`, [
         {
           text: 'Share',
@@ -67,18 +89,20 @@ const HistoryScreen = ({ navigation }: any) => {
     }
   };
 
-  const handleClearAll = () => {
+  const handleDeleteBarcode = (barcodeId: string) => {
     Alert.alert(
-      'Clear All Barcodes',
-      'Are you sure you want to delete all scanned barcodes? This cannot be undone.',
+      'Delete Barcode',
+      'Are you sure you want to delete this barcode?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete All',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await clearAllBarcodes();
-            setBarcodes([]);
+            if (sessionId) {
+              await removeBarcodeFromSession(sessionId, barcodeId);
+              loadSessionData();
+            }
           },
         },
       ],
@@ -106,9 +130,16 @@ const HistoryScreen = ({ navigation }: any) => {
       <Card.Content>
         <View style={styles.cardHeader}>
           <Text style={styles.barcodeType}>{item.type.toUpperCase()}</Text>
-          <Text style={styles.timestamp}>
-            {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
-          </Text>
+          <View style={styles.headerActions}>
+            <Text style={styles.timestamp}>
+              {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
+            </Text>
+            <IconButton
+              icon="delete"
+              size={16}
+              onPress={() => handleDeleteBarcode(item.id)}
+            />
+          </View>
         </View>
         <Text style={styles.barcodeValue}>{item.value}</Text>
 
@@ -130,8 +161,26 @@ const HistoryScreen = ({ navigation }: any) => {
     </Card>
   );
 
+  if (!session) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading session...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      <Card style={styles.sessionCard}>
+        <Card.Content>
+          <Text style={styles.sessionTitle}>{session.name}</Text>
+          <Text style={styles.sessionLocation}>📍 {session.location}</Text>
+          <Text style={styles.sessionProgress}>
+            Progress: {barcodes.length} / {session.expectedCodes} barcodes
+          </Text>
+        </Card.Content>
+      </Card>
+
       <Searchbar
         placeholder="Search barcodes..."
         onChangeText={setSearchQuery}
@@ -150,12 +199,6 @@ const HistoryScreen = ({ navigation }: any) => {
             onPress={handleExport}
             disabled={barcodes.length === 0}
           />
-          <IconButton
-            icon="delete"
-            mode="contained"
-            onPress={handleClearAll}
-            disabled={barcodes.length === 0}
-          />
         </View>
       </View>
 
@@ -163,12 +206,12 @@ const HistoryScreen = ({ navigation }: any) => {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             {barcodes.length === 0
-              ? 'No barcodes scanned yet'
+              ? 'No barcodes scanned yet in this session'
               : 'No barcodes match your search'}
           </Text>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('Scanner')}
+            onPress={() => navigation.navigate('Scanner', { sessionId })}
             style={styles.scanButton}
           >
             Start Scanning
@@ -186,7 +229,7 @@ const HistoryScreen = ({ navigation }: any) => {
       <FAB
         icon="qrcode-scan"
         style={styles.fab}
-        onPress={() => navigation.navigate('Scanner')}
+        onPress={() => navigation.navigate('Scanner', { sessionId })}
       />
     </View>
   );
@@ -196,6 +239,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sessionCard: {
+    margin: 16,
+    marginBottom: 8,
+  },
+  sessionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  sessionLocation: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  sessionProgress: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6200ea',
   },
   searchbar: {
     margin: 16,
@@ -227,6 +294,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   barcodeType: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -239,6 +310,7 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: '#666',
+    marginRight: 4,
   },
   barcodeValue: {
     fontSize: 16,
