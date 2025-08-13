@@ -24,6 +24,23 @@ const ScannerScreen = ({ navigation }: any) => {
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
 
+  const createAppFolder = async () => {
+    try {
+      const folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner`;
+      const exists = await RNFS.exists(folderPath);
+
+      if (!exists) {
+        await RNFS.mkdir(folderPath);
+        console.log('Created app folder:', folderPath);
+      }
+
+      return folderPath;
+    } catch (error) {
+      console.error('Error creating app folder:', error);
+      return null;
+    }
+  };
+
   const requestStoragePermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -130,13 +147,41 @@ const ScannerScreen = ({ navigation }: any) => {
         const timestamp = new Date().getTime();
         const filename = `barcode_${timestamp}.jpg`;
 
-        // Define the destination path in app's document directory
-        const destPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
+        let destPath;
+        if (hasStoragePermission && Platform.OS === 'android') {
+          // Save to external storage (gallery) if permission is granted
+          const folderPath = await createAppFolder();
+          if (folderPath) {
+            destPath = `${folderPath}/${filename}`;
+          } else {
+            // Fallback to app documents
+            destPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
+          }
+        } else {
+          // Default to app documents
+          destPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
+        }
 
-        // Move the photo from temp location to app documents
+        // Move the photo from temp location to destination
         await RNFS.moveFile(photo.path, destPath);
 
         console.log('Photo saved to:', destPath);
+
+        // If saved to external storage, scan for media to make it visible in gallery
+        if (
+          hasStoragePermission &&
+          Platform.OS === 'android' &&
+          destPath.includes('Pictures/BarcodeScanner')
+        ) {
+          try {
+            // Trigger media scanner to make the image appear in gallery
+            await RNFS.scanFile(destPath);
+            console.log('Image scanned for gallery visibility');
+          } catch (scanError) {
+            console.log('Media scan failed, but photo is saved:', scanError);
+          }
+        }
+
         return destPath;
       }
     } catch (error) {

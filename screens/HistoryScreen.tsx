@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Alert, Share, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Alert,
+  Share,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import {
   Button,
   Card,
@@ -79,7 +87,7 @@ const HistoryScreen = ({ navigation }: any) => {
 
   const showPhotoModal = (photoPath?: string, barcodeValue?: string) => {
     if (!photoPath) return;
-    
+
     Alert.alert(
       'Barcode Photo',
       `Photo for: ${barcodeValue}\n\nSaved at: ${photoPath}`,
@@ -88,8 +96,8 @@ const HistoryScreen = ({ navigation }: any) => {
           text: 'Share Photo',
           onPress: () => Share.share({ url: `file://${photoPath}` }),
         },
-        { text: 'Close' }
-      ]
+        { text: 'Close' },
+      ],
     );
   };
 
@@ -103,10 +111,10 @@ const HistoryScreen = ({ navigation }: any) => {
           </Text>
         </View>
         <Text style={styles.barcodeValue}>{item.value}</Text>
-        
+
         {/* Add photo display */}
         {item.photoPath && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.photoContainer}
             onPress={() => showPhotoModal(item.photoPath, item.value)}
           >
