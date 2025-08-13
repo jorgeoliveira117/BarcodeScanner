@@ -157,7 +157,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }, settings.scanCooldown);
   };
 
-  const triggerFeedback = (long = true) => {
+  const triggerFeedback = (error = false) => {
     if (settings.vibrationEnabled) {
       // Try haptic feedback first (iOS and some Android devices)
       const hapticOptions = {
@@ -165,7 +165,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
         ignoreAndroidSystemSettings: false,
       };
 
-      if (long) {
+      if (error) {
         ReactNativeHapticFeedback.trigger('impactHeavy', hapticOptions);
       } else {
         ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
@@ -173,7 +173,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
       // Fallback vibration for Android devices that don't support haptic feedback
       if (Platform.OS === 'android') {
-        Vibration.vibrate(long ? 500 : 100);
+        Vibration.vibrate(error ? 500 : 200);
       }
     }
   };
@@ -207,6 +207,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
       showNotification('✅ Barcode added to session!', 'success');
       setPendingBarcode(null);
     } catch (error) {
+      triggerFeedback(true);
       console.error('Error adding barcode to session:', error);
       showNotification('❌ Failed to add barcode', 'error');
       setPendingBarcode(null);
@@ -517,6 +518,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
           );
         } catch (error) {
           console.error('Error saving barcode to session:', error);
+          triggerFeedback(true);
           showNotification(
             '❌ Failed to save barcode. Please try again.',
             'error',
