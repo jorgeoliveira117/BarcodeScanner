@@ -14,6 +14,7 @@ import {
   createSession,
   modifySession,
   Session,
+  validateSessionCodes,
 } from '../utils/storage';
 import { CodeType } from 'react-native-vision-camera';
 
@@ -40,6 +41,9 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   const [expectedCodeTypes, setExpectedCodeTypes] = useState<CodeType[]>(
     session?.expectedCodeTypes || [],
   );
+  const [codesToIgnore, setCodesToIgnore] = useState<CodeType[]>(
+    session?.codesToIgnore || [],
+  );
   const [autosavePictures, setAutosavePictures] = useState(
     session?.autosavePictures || false,
   );
@@ -50,6 +54,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     location: '',
     expectedCodes: '',
     expectedCodeTypes: '',
+    codesToIgnore: '',
   });
 
   const validateForm = () => {
@@ -58,6 +63,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
       location: '',
       expectedCodes: '',
       expectedCodeTypes: '',
+      codesToIgnore: '',
     };
 
     if (!name.trim()) {
@@ -75,6 +81,14 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
 
     if (expectedCodeTypes.length === 0) {
       newErrors.expectedCodeTypes = 'Please select at least one barcode type';
+    }
+
+    // Validate that codesToIgnore doesn't conflict with expectedCodeTypes
+    const validation = validateSessionCodes(expectedCodeTypes, codesToIgnore);
+    if (!validation.isValid) {
+      newErrors.codesToIgnore = `Cannot ignore expected code types: ${validation.conflicts.join(
+        ', ',
+      )}`;
     }
 
     setErrors(newErrors);
@@ -96,6 +110,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           name: name.trim(),
           location: location.trim(),
           expectedCodeTypes,
+          codesToIgnore,
           expectedCodes: parseInt(expectedCodes),
           autosavePictures,
         });
@@ -117,6 +132,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           folderName: '', // This will be auto-generated
           location: location.trim(),
           expectedCodeTypes,
+          codesToIgnore,
           expectedCodes: parseInt(expectedCodes),
           autosavePictures,
         });
@@ -157,6 +173,17 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     setExpectedCodeTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
     );
+  };
+
+  const toggleIgnoreCodeType = (type: CodeType) => {
+    setCodesToIgnore(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
+    );
+  };
+
+  // Get available code types that can be ignored (exclude expected types)
+  const getAvailableIgnoreTypes = () => {
+    return BARCODE_TYPES.filter(type => !expectedCodeTypes.includes(type));
   };
 
   return (
@@ -246,6 +273,40 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
             {errors.expectedCodeTypes}
           </HelperText>
 
+          <Text style={styles.sectionTitle}>Codes to Ignore (Optional)</Text>
+          <Text style={styles.sectionDescription}>
+            Select barcode types that should be ignored during scanning. These
+            cannot be the same as expected types.
+          </Text>
+          <View style={styles.chipsContainer}>
+            {getAvailableIgnoreTypes().map(type => (
+              <Chip
+                key={`ignore-${type}`}
+                mode={codesToIgnore.includes(type) ? 'flat' : 'outlined'}
+                selected={codesToIgnore.includes(type)}
+                onPress={() => toggleIgnoreCodeType(type)}
+                style={[
+                  styles.chip,
+                  codesToIgnore.includes(type) && styles.ignoreChip,
+                ]}
+                textStyle={
+                  codesToIgnore.includes(type) && styles.ignoreChipText
+                }
+              >
+                {type}
+              </Chip>
+            ))}
+          </View>
+          {getAvailableIgnoreTypes().length === 0 && (
+            <Text style={styles.noIgnoreTypesText}>
+              All barcode types are set as expected. Change expected types above
+              to enable ignoring specific types.
+            </Text>
+          )}
+          <HelperText type="error" visible={!!errors.codesToIgnore}>
+            {errors.codesToIgnore}
+          </HelperText>
+
           <View style={styles.switchContainer}>
             <View style={styles.switchLabelContainer}>
               <Text style={styles.switchLabel}>Auto-save Pictures</Text>
@@ -326,6 +387,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 12,
   },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -334,6 +401,19 @@ const styles = StyleSheet.create({
   chip: {
     marginRight: 8,
     marginBottom: 8,
+  },
+  ignoreChip: {
+    backgroundColor: '#ffeb3b',
+  },
+  ignoreChipText: {
+    color: '#000',
+  },
+  noIgnoreTypesText: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: 8,
   },
   switchContainer: {
     flexDirection: 'row',

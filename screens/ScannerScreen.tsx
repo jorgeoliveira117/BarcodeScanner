@@ -475,22 +475,17 @@ const ScannerScreen = ({ route, navigation }: any) => {
     return null;
   };
 
+  const getActiveCodeTypes = () => {
+    if (!session) {
+      // If no session, use all available types
+      return BARCODE_TYPES;
+    }
+
+    return BARCODE_TYPES.filter(type => !session.codesToIgnore.includes(type));
+  };
+
   const codeScanner = useCodeScanner({
-    codeTypes: [
-      'code-128',
-      'code-39',
-      'code-93',
-      'codabar',
-      'ean-13',
-      'ean-8',
-      'itf',
-      'upc-e',
-      'upc-a',
-      'qr',
-      'pdf-417',
-      'aztec',
-      'data-matrix',
-    ],
+    codeTypes: getActiveCodeTypes(),
     onCodeScanned: async codes => {
       if (!isScanningActive || !session || !sessionId) return;
 

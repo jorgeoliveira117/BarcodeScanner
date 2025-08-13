@@ -34,16 +34,46 @@ export interface Session {
   location: string;
   expectedCodeTypes: CodeType[];
   expectedCodes: number;
+  codesToIgnore: CodeType[];
   autosavePictures: boolean;
 }
 
 const SESSIONS_KEY = 'sessions';
+
+// Validation function to ensure codesToIgnore doesn't conflict with expectedCodeTypes
+export const validateSessionCodes = (
+  expectedCodeTypes: CodeType[],
+  codesToIgnore: CodeType[],
+): { isValid: boolean; conflicts: CodeType[] } => {
+  const conflicts = codesToIgnore.filter(ignoreType =>
+    expectedCodeTypes.includes(ignoreType),
+  );
+
+  return {
+    isValid: conflicts.length === 0,
+    conflicts,
+  };
+};
 
 // Session management functions
 export const createSession = async (
   sessionData: Omit<Session, 'id' | 'barcodes'>,
 ): Promise<Session> => {
   try {
+    // Validate that codesToIgnore doesn't conflict with expectedCodeTypes
+    const validation = validateSessionCodes(
+      sessionData.expectedCodeTypes,
+      sessionData.codesToIgnore,
+    );
+
+    if (!validation.isValid) {
+      throw new Error(
+        `Cannot ignore expected code types. Conflicting types: ${validation.conflicts.join(
+          ', ',
+        )}`,
+      );
+    }
+
     const existingSessions = await getSessions();
 
     let id = existingSessions.length;
@@ -110,7 +140,25 @@ export const modifySession = async (
       throw new Error('Session not found');
     }
 
-    const updatedSession = { ...sessions[sessionIndex], ...updates };
+    const currentSession = sessions[sessionIndex];
+    const updatedSession = { ...currentSession, ...updates };
+
+    // Validate codes if either expectedCodeTypes or codesToIgnore is being updated
+    if (updates.expectedCodeTypes || updates.codesToIgnore) {
+      const validation = validateSessionCodes(
+        updatedSession.expectedCodeTypes,
+        updatedSession.codesToIgnore,
+      );
+
+      if (!validation.isValid) {
+        throw new Error(
+          `Cannot ignore expected code types. Conflicting types: ${validation.conflicts.join(
+            ', ',
+          )}`,
+        );
+      }
+    }
+
     sessions[sessionIndex] = updatedSession;
 
     await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
@@ -133,6 +181,15 @@ export const addBarcodeToSession = async (
 
     if (sessionIndex === -1) {
       throw new Error('Session not found');
+    }
+
+    const session = sessions[sessionIndex];
+
+    // Check if the barcode type should be ignored
+    if (session.codesToIgnore.includes(barcode.type)) {
+      throw new Error(
+        `Barcode type '${barcode.type}' is configured to be ignored for this session`,
+      );
     }
 
     const newBarcode: Barcode = {
