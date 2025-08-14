@@ -31,6 +31,7 @@ const theme = {
   colors: {
     ...DefaultTheme.colors,
     primary: '#266DD3',
+    onSurfaceVariant: '#919194ff',
     accent: '#70A288',
     background: '#050019',
     text: '#F7F7FF',
@@ -65,7 +66,7 @@ function App() {
           <Stack.Screen
             name="SessionForm"
             component={SessionFormScreen}
-            options={{ title: 'Session', headerShown: true }}
+            options={{ title: 'Session', headerShown: false }}
           />
           <Stack.Screen
             name="Scanner"
