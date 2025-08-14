@@ -36,6 +36,10 @@ const theme = {
     text: '#F7F7FF',
     success: '#70A288',
     error: '#ED6A5A',
+    outline: '#266DD3',
+    surfaceDisabled: '#8E929A',
+    onSurfaceDisabled: '#8E929A',
+    outlineVariant: '#333333',
   },
 };
 
@@ -76,7 +80,7 @@ function App() {
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{ title: 'Settings', headerShown: true }}
+            options={{ title: 'Settings', headerShown: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>
