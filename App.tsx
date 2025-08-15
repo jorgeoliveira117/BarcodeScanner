@@ -31,7 +31,7 @@ const theme = {
   colors: {
     ...DefaultTheme.colors,
     primary: '#266DD3',
-    onSurfaceVariant: '#919194ff',
+    onSurfaceVariant: '#919194',
     accent: '#70A288',
     background: '#050019',
     text: '#F7F7FF',

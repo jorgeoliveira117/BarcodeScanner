@@ -71,90 +71,106 @@ const SessionsListScreen = ({ navigation }: any) => {
   };
 
   const renderSessionItem = ({ item }: { item: Session }) => (
-    <Card style={styles(theme).card}>
-      <Card.Content>
-        <View style={styles(theme).cardHeader}>
-          <Text style={styles(theme).sessionName}>{item.name}</Text>
-          <View style={styles(theme).headerActions}>
-            <IconButton
-              icon="pencil"
-              size={20}
-              onPress={() => handleEditSession(item)}
-            />
-            <IconButton
-              icon="delete"
-              size={20}
-              onPress={() => handleDeleteSession(item.id)}
-            />
-          </View>
+    <View style={styles(theme).card}>
+      <View style={styles(theme).cardHeader}>
+        <Text style={styles(theme).sessionName} variant="titleLarge">
+          {item.name}
+        </Text>
+        <View style={styles(theme).headerActions}>
+          <IconButton
+            icon="pencil"
+            size={20}
+            onPress={() => handleEditSession(item)}
+            iconColor="#F7F7FF"
+          />
+          <IconButton
+            icon="delete"
+            size={20}
+            onPress={() => handleDeleteSession(item.id)}
+            iconColor="#F7F7FF"
+          />
         </View>
+      </View>
 
-        <Text style={styles(theme).location}>📍 {item.location}</Text>
+      <Text style={styles(theme).location}>
+        <Icon source="map-marker" size={16} color="#F7F7FF" /> {item.location}
+      </Text>
 
-        <View style={styles(theme).statsContainer}>
+      <View style={styles(theme).statsContainer}>
+        <Text style={styles(theme).statText}>
+          {item.barcodes.length} / {item.expectedCodes} barcodes
+        </Text>
+        {item.expectedCodeTypes && item.expectedCodeTypes.length > 0 && (
           <Text style={styles(theme).statText}>
-            {item.barcodes.length} / {item.expectedCodes} barcodes
+            Expected: {item.expectedCodeTypes.join(', ').toUpperCase()}
           </Text>
+        )}
+        {item.codesToIgnore && item.codesToIgnore.length > 0 && (
           <Text style={styles(theme).statText}>
-            Expected: {item.expectedCodeTypes.join(', ')}
+            Ignored: {item.codesToIgnore.join(', ').toUpperCase()}
           </Text>
-        </View>
+        )}
+      </View>
 
-        <View style={styles(theme).chipsContainer}>
-          {item.autosavePictures && (
-            <Chip mode="outlined" style={styles(theme).chip}>
-              📷 Auto-save Photos
-            </Chip>
-          )}
+      <View style={styles(theme).chipsContainer}>
+        {item.autosavePictures && (
           <Chip
             mode="outlined"
-            style={[
-              styles(theme).chip,
-              item.barcodes.length >= item.expectedCodes
-                ? styles(theme).completeChip
-                : styles(theme).incompleteChip,
-            ]}
+            style={styles(theme).chip}
+            textStyle={styles(theme).chipText}
           >
-            {item.barcodes.length >= item.expectedCodes ? (
-              <View style={styles(theme).chipContent}>
-                <Icon source="check" size={16} color="#F7F7FF" />
-                <Text style={styles(theme).completeChipText}>Complete</Text>
-              </View>
-            ) : (
-              <View style={styles(theme).chipContent}>
-                <Icon
-                  source="timer-sand"
-                  size={16}
-                  color={theme.colors.background}
-                />
-                <Text style={styles(theme).incompleteChipText}>
-                  In Progress
-                </Text>
-              </View>
-            )}
+            <View style={styles(theme).chipContent}>
+              <Icon source="camera" size={16} color={theme.colors.background} />
+              <Text style={styles(theme).chipText}>Auto-save</Text>
+            </View>
           </Chip>
-        </View>
+        )}
+        <Chip
+          mode="outlined"
+          style={[
+            styles(theme).chip,
+            item.barcodes.length >= item.expectedCodes
+              ? styles(theme).completeChip
+              : styles(theme).incompleteChip,
+          ]}
+        >
+          {item.barcodes.length >= item.expectedCodes ? (
+            <View style={styles(theme).chipContent}>
+              <Icon source="check" size={16} color="#F7F7FF" />
+              <Text style={styles(theme).completeChipText}>Complete</Text>
+            </View>
+          ) : (
+            <View style={styles(theme).chipContent}>
+              <Icon
+                source="timer-sand"
+                size={16}
+                color={theme.colors.background}
+              />
+              <Text style={styles(theme).incompleteChipText}>In Progress</Text>
+            </View>
+          )}
+        </Chip>
+      </View>
 
-        <View style={styles(theme).buttonContainer}>
-          <Button
-            mode="contained"
-            onPress={() => handleResumeSession(item)}
-            style={styles(theme).actionButton}
-            icon="play"
-          >
-            Resume
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => handleViewHistory(item)}
-            style={styles(theme).actionButton}
-            icon="history"
-          >
-            View History
-          </Button>
-        </View>
-      </Card.Content>
-    </Card>
+      <View style={styles(theme).buttonContainer}>
+        <Button
+          mode="contained"
+          onPress={() => handleResumeSession(item)}
+          style={styles(theme).actionButton}
+          icon="play"
+        >
+          Resume
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={() => handleViewHistory(item)}
+          style={styles(theme).actionButton}
+          icon="history"
+        >
+          View History
+        </Button>
+      </View>
+    </View>
   );
 
   return (
@@ -254,25 +270,27 @@ const styles = (theme: any) =>
       paddingHorizontal: 16,
     },
     card: {
-      marginBottom: 12,
+      backgroundColor: theme.colors.background,
+      borderColor: theme.colors.outlineVariant,
+      borderBottomWidth: 1,
+      paddingBottom: 16,
     },
     cardHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 8,
     },
     sessionName: {
-      fontSize: 18,
       fontWeight: 'bold',
       flex: 1,
+      color: theme.colors.text,
     },
     headerActions: {
       flexDirection: 'row',
     },
     location: {
       fontSize: 14,
-      color: theme.colors.outlineVariant,
+      color: theme.colors.text,
       marginBottom: 8,
     },
     statsContainer: {
@@ -280,7 +298,7 @@ const styles = (theme: any) =>
     },
     statText: {
       fontSize: 12,
-      color: theme.colors.outlineVariant,
+      color: theme.colors.onSurfaceVariant,
       marginBottom: 2,
     },
     chipsContainer: {
@@ -291,6 +309,10 @@ const styles = (theme: any) =>
     chip: {
       marginRight: 8,
       marginBottom: 4,
+      borderWidth: 0,
+    },
+    chipText: {
+      color: theme.colors.background,
     },
     chipContent: {
       flexDirection: 'row',
@@ -300,14 +322,12 @@ const styles = (theme: any) =>
     },
     completeChip: {
       backgroundColor: theme.colors.success,
-      borderColor: theme.colors.success,
     },
     completeChipText: {
       color: theme.colors.text,
     },
     incompleteChip: {
       backgroundColor: theme.colors.tertiary,
-      borderColor: theme.colors.tertiary,
     },
     incompleteChipText: {
       color: theme.colors.background,
