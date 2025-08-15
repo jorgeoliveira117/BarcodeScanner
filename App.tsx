@@ -41,6 +41,7 @@ const theme = {
     surfaceDisabled: '#8E929A',
     onSurfaceDisabled: '#8E929A',
     outlineVariant: '#333333',
+    tertiary: '#FBD1A2',
   },
 };
 
