@@ -13,7 +13,7 @@ import {
   useCameraDevices,
   useCodeScanner,
 } from 'react-native-vision-camera';
-import { Button, Text, Card, Snackbar } from 'react-native-paper';
+import { Button, Text, Card, Snackbar, useTheme } from 'react-native-paper';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   addBarcodeToSession,
@@ -28,6 +28,7 @@ import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 
 const ScannerScreen = ({ route, navigation }: any) => {
+  const theme = useTheme();
   const { sessionId } = route.params || {};
   const [session, setSession] = useState<Session | null>(null);
   const [settings, setSettings] = useState<AppSettings>({
@@ -670,25 +671,25 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
   if (!hasCameraPermission) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>
+      <View style={styles(theme).permissionContainer}>
+        <Text style={styles(theme).permissionText}>
           Camera permission is required to scan barcodes
         </Text>
-        <Text style={styles.permissionSubtext}>
+        <Text style={styles(theme).permissionSubtext}>
           Camera: Required for barcode scanning{'\n'}
           Storage: Optional for saving photos
         </Text>
         <Button
           mode="contained"
           onPress={requestPermission}
-          style={styles.permissionButton}
+          style={styles(theme).permissionButton}
         >
           Grant Camera Permission
         </Button>
         <Button
           mode="outlined"
           onPress={() => navigation.goBack()}
-          style={styles.permissionButton}
+          style={styles(theme).permissionButton}
         >
           Go Back
         </Button>
@@ -698,7 +699,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
   if (!device) {
     return (
-      <View style={styles.container}>
+      <View style={styles(theme).container}>
         <Text>No camera device found</Text>
         <Button mode="contained" onPress={() => navigation.goBack()}>
           Go Back
@@ -708,24 +709,24 @@ const ScannerScreen = ({ route, navigation }: any) => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles(theme).container}>
       <Camera
         ref={cameraRef}
-        style={styles.camera}
+        style={styles(theme).camera}
         device={device}
         isActive={isActive}
         codeScanner={codeScanner}
         photo={true}
       />
-      <View style={styles.overlay}>
+      <View style={styles(theme).overlay}>
         {session && (
-          <Card style={styles.sessionInfoCard}>
-            <Card.Content style={styles.sessionInfo}>
-              <Text style={styles.sessionName}>{session.name}</Text>
-              <Text style={styles.sessionProgress}>
+          <Card style={styles(theme).sessionInfoCard}>
+            <Card.Content style={styles(theme).sessionInfo}>
+              <Text style={styles(theme).sessionName}>{session.name}</Text>
+              <Text style={styles(theme).sessionProgress}>
                 {session.barcodes.length} / {session.expectedCodes} barcodes
               </Text>
-              <Text style={styles.expectedTypes}>
+              <Text style={styles(theme).expectedTypes}>
                 Expected: {session.expectedCodeTypes.join(', ')}
               </Text>
             </Card.Content>
@@ -733,14 +734,16 @@ const ScannerScreen = ({ route, navigation }: any) => {
         )}
 
         {session && session.barcodes.length > 0 && (
-          <Card style={styles.latestBarcodeCard}>
-            <Card.Content style={styles.latestBarcodeContent}>
-              <View style={styles.latestBarcodeHeader}>
-                <Text style={styles.latestBarcodeTitle}>Latest Scan</Text>
+          <Card style={styles(theme).latestBarcodeCard}>
+            <Card.Content style={styles(theme).latestBarcodeContent}>
+              <View style={styles(theme).latestBarcodeHeader}>
+                <Text style={styles(theme).latestBarcodeTitle}>
+                  Latest Scan
+                </Text>
                 <Button
                   mode="outlined"
                   onPress={handleDeleteLatestBarcode}
-                  style={styles.deleteButton}
+                  style={styles(theme).deleteButton}
                   buttonColor="rgba(244, 67, 54, 0.1)"
                   textColor="#f44336"
                   icon="delete"
@@ -749,14 +752,17 @@ const ScannerScreen = ({ route, navigation }: any) => {
                   Delete
                 </Button>
               </View>
-              <View style={styles.latestBarcodeInfo}>
-                <Text style={styles.latestBarcodeType}>
+              <View style={styles(theme).latestBarcodeInfo}>
+                <Text style={styles(theme).latestBarcodeType}>
                   {session.barcodes[0].type.toUpperCase()}
                 </Text>
-                <Text style={styles.latestBarcodeValue} numberOfLines={2}>
+                <Text
+                  style={styles(theme).latestBarcodeValue}
+                  numberOfLines={2}
+                >
                   {session.barcodes[0].value}
                 </Text>
-                <Text style={styles.latestBarcodeTime}>
+                <Text style={styles(theme).latestBarcodeTime}>
                   {new Date(session.barcodes[0].timestamp).toLocaleTimeString()}
                 </Text>
               </View>
@@ -764,18 +770,18 @@ const ScannerScreen = ({ route, navigation }: any) => {
           </Card>
         )}
 
-        <View style={styles.scanAreaContainer}>
-          <View style={styles.scanArea} />
-          <Text style={styles.instructionText}>
+        <View style={styles(theme).scanAreaContainer}>
+          <View style={styles(theme).scanArea} />
+          <Text style={styles(theme).instructionText}>
             Point your camera at a barcode
           </Text>
         </View>
 
-        <View style={styles.buttonContainer}>
+        <View style={styles(theme).buttonContainer}>
           <Button
             mode="outlined"
             onPress={() => navigation.navigate('History', { sessionId })}
-            style={styles.historyButton}
+            style={styles(theme).historyButton}
             textColor="#fff"
           >
             View History
@@ -783,7 +789,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
           <Button
             mode="contained"
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={styles(theme).backButton}
           >
             Back
           </Button>
@@ -804,23 +810,23 @@ const ScannerScreen = ({ route, navigation }: any) => {
             : undefined
         }
         style={[
-          styles.snackbar,
-          notification.type === 'error' && styles.errorSnackbar,
-          notification.type === 'warning' && styles.warningSnackbar,
-          notification.type === 'success' && styles.successSnackbar,
+          styles(theme).snackbar,
+          notification.type === 'error' && styles(theme).errorSnackbar,
+          notification.type === 'warning' && styles(theme).warningSnackbar,
+          notification.type === 'success' && styles(theme).successSnackbar,
         ]}
       >
-        <View style={styles.snackbarContent}>
-          <Text style={styles.snackbarText}>{notification.message}</Text>
+        <View style={styles(theme).snackbarContent}>
+          <Text style={styles(theme).snackbarText}>{notification.message}</Text>
           {notification.actions && notification.actions.length > 1 && (
-            <View style={styles.snackbarActions}>
+            <View style={styles(theme).snackbarActions}>
               {notification.actions.map((action, index) => (
                 <Button
                   key={index}
                   mode="text"
                   onPress={action.onPress}
                   textColor="#fff"
-                  style={styles.snackbarActionButton}
+                  style={styles(theme).snackbarActionButton}
                 >
                   {action.text}
                 </Button>
@@ -833,196 +839,197 @@ const ScannerScreen = ({ route, navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  sessionInfoCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 8,
-    marginHorizontal: 20,
-  },
-  sessionInfo: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  sessionName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  sessionProgress: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  expectedTypes: {
-    color: '#ccc',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  latestBarcodeCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 8,
-    marginHorizontal: 20,
-    marginTop: 10,
-  },
-  latestBarcodeContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  latestBarcodeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  latestBarcodeTitle: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  deleteButton: {
-    borderColor: '#f44336',
-    borderWidth: 1,
-  },
-  latestBarcodeInfo: {
-    alignItems: 'flex-start',
-  },
-  latestBarcodeType: {
-    color: '#4CAF50',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  latestBarcodeValue: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  latestBarcodeTime: {
-    color: '#ccc',
-    fontSize: 10,
-  },
-  scanAreaContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanArea: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: 'transparent',
-  },
-  instructionText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-  },
-  historyButton: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderColor: '#fff',
-  },
-  backButton: {
-    flex: 1,
-  },
-  storageButton: {
-    position: 'absolute',
-    bottom: 100,
-    marginHorizontal: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  storageButtonLabel: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  permissionText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#333',
-  },
-  permissionSubtext: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
-  },
-  permissionButton: {
-    marginVertical: 8,
-    paddingVertical: 5,
-    minWidth: 200,
-  },
-  // Notification system styles
-  snackbar: {
-    position: 'absolute',
-    bottom: 100,
-    left: 16,
-    right: 16,
-    borderRadius: 8,
-  },
-  errorSnackbar: {
-    backgroundColor: '#d32f2f',
-  },
-  warningSnackbar: {
-    backgroundColor: '#f57c00',
-  },
-  successSnackbar: {
-    backgroundColor: '#2e7d32',
-  },
-  snackbarContent: {
-    flexDirection: 'column',
-  },
-  snackbarText: {
-    color: '#fff',
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  snackbarActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-    gap: 8,
-  },
-  snackbarActionButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-});
+const styles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    camera: {
+      flex: 1,
+    },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 50,
+    },
+    sessionInfoCard: {
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      borderRadius: 8,
+      marginHorizontal: 20,
+    },
+    sessionInfo: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    sessionName: {
+      color: theme.colors.text,
+      fontSize: 16,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    sessionProgress: {
+      color: theme.colors.text,
+      fontSize: 14,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    expectedTypes: {
+      color: theme.colors.text,
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    latestBarcodeCard: {
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      borderRadius: 8,
+      marginHorizontal: 20,
+      marginTop: 10,
+    },
+    latestBarcodeContent: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    latestBarcodeHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    latestBarcodeTitle: {
+      color: theme.colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    deleteButton: {
+      borderColor: theme.colors.error,
+      borderWidth: 1,
+    },
+    latestBarcodeInfo: {
+      alignItems: 'flex-start',
+    },
+    latestBarcodeType: {
+      color: theme.colors.success,
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    latestBarcodeValue: {
+      color: theme.colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 4,
+    },
+    latestBarcodeTime: {
+      color: theme.colors.text,
+      fontSize: 10,
+    },
+    scanAreaContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scanArea: {
+      width: 250,
+      height: 250,
+      borderWidth: 2,
+      borderColor: theme.colors.text,
+      backgroundColor: 'transparent',
+    },
+    instructionText: {
+      color: theme.colors.text,
+      fontSize: 16,
+      marginTop: 20,
+      textAlign: 'center',
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+    },
+    historyButton: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      borderColor: theme.colors.text,
+    },
+    backButton: {
+      flex: 1,
+    },
+    storageButton: {
+      position: 'absolute',
+      bottom: 100,
+      marginHorizontal: 20,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    storageButtonLabel: {
+      color: theme.colors.text,
+      fontSize: 12,
+    },
+    permissionContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+      backgroundColor: theme.colors.background,
+    },
+    permissionText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 10,
+      color: theme.colors.text,
+    },
+    permissionSubtext: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 30,
+      color: theme.colors.text,
+    },
+    permissionButton: {
+      marginVertical: 8,
+      paddingVertical: 5,
+      minWidth: 200,
+    },
+    // Notification system styles
+    snackbar: {
+      position: 'absolute',
+      bottom: 100,
+      left: 16,
+      right: 16,
+      borderRadius: 8,
+    },
+    errorSnackbar: {
+      backgroundColor: theme.colors.error,
+    },
+    warningSnackbar: {
+      backgroundColor: theme.colors.warning,
+    },
+    successSnackbar: {
+      backgroundColor: theme.colors.success,
+    },
+    snackbarContent: {
+      flexDirection: 'column',
+    },
+    snackbarText: {
+      color: theme.colors.text,
+      fontSize: 14,
+      lineHeight: 18,
+    },
+    snackbarActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 8,
+      gap: 8,
+    },
+    snackbarActionButton: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+  });
 
 export default ScannerScreen;
