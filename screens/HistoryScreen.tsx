@@ -17,6 +17,7 @@ import {
   Searchbar,
   IconButton,
   useTheme,
+  Icon,
 } from 'react-native-paper';
 import {
   getBarcodesFromSession,
@@ -193,17 +194,16 @@ const HistoryScreen = ({ route, navigation }: any) => {
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
-      <Card style={styles(theme).sessionCard}>
-        <Card.Content>
-          <Text style={styles(theme).sessionTitle}>{session.name}</Text>
-          <Text style={styles(theme).sessionLocation}>
-            📍 {session.location}
-          </Text>
-          <Text style={styles(theme).sessionProgress}>
-            Progress: {barcodes.length} / {session.expectedCodes} barcodes
-          </Text>
-        </Card.Content>
-      </Card>
+      <View style={styles(theme).sessionCard}>
+        <Text style={styles(theme).sessionTitle}>{session.name}</Text>
+        <Text style={styles(theme).sessionLocation}>
+          <Icon source="map-marker" size={16} color="#F7F7FF" />{' '}
+          {session.location}
+        </Text>
+        <Text style={styles(theme).sessionProgress}>
+          Progress: {barcodes.length} / {session.expectedCodes} barcodes
+        </Text>
+      </View>
 
       <Searchbar
         placeholder="Search barcodes..."
@@ -212,18 +212,16 @@ const HistoryScreen = ({ route, navigation }: any) => {
         style={styles(theme).searchbar}
       />
 
-      <View style={styles(theme).header}>
+      <View style={styles(theme).countContainer}>
         <Text style={styles(theme).countText}>
           {filteredBarcodes.length} barcode(s) found
         </Text>
-        <View style={styles(theme).headerButtons}>
-          <IconButton
-            icon="export"
-            mode="contained"
-            onPress={handleExport}
-            disabled={barcodes.length === 0}
-          />
-        </View>
+        <IconButton
+          icon="export"
+          onPress={handleExport}
+          disabled={barcodes.length === 0}
+          iconColor="#F7F7FF"
+        />
       </View>
 
       {filteredBarcodes.length === 0 ? (
@@ -294,12 +292,13 @@ const styles = (theme: any) =>
     },
     sessionCard: {
       margin: 16,
-      marginBottom: 8,
+      marginBottom: 0,
     },
     sessionTitle: {
       fontSize: 18,
       fontWeight: 'bold',
       marginBottom: 4,
+      color: theme.colors.text,
     },
     sessionLocation: {
       fontSize: 14,
@@ -314,12 +313,16 @@ const styles = (theme: any) =>
     searchbar: {
       margin: 16,
     },
+    countContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
     countText: {
       fontSize: 14,
       color: theme.colors.onSurfaceVariant,
-    },
-    headerButtons: {
-      flexDirection: 'row',
     },
     list: {
       flex: 1,
