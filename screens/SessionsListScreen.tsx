@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   Platform,
+  Linking,
 } from 'react-native';
 import {
   Button,
@@ -70,6 +71,44 @@ const SessionsListScreen = ({ navigation }: any) => {
     navigation.navigate('SessionForm', { session, mode: 'edit' });
   };
 
+  const openGoogleMaps = async (session: Session) => {
+    if (!session.gpsLocation) {
+      Alert.alert(
+        'No GPS Location',
+        'This session does not have GPS coordinates set.',
+      );
+      return;
+    }
+
+    const { latitude, longitude } = session.gpsLocation;
+    const label = encodeURIComponent(session.name);
+
+    // Create Google Maps URL
+    const googleMapsUrl = Platform.select({
+      ios: `maps://maps.google.com/maps?q=${latitude},${longitude}&ll=${latitude},${longitude}&z=16&t=m`,
+      android: `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})&z=16`,
+    });
+
+    // Fallback to web Google Maps if native apps aren't available
+    const webUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${label}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(googleMapsUrl!);
+      if (canOpen) {
+        await Linking.openURL(googleMapsUrl!);
+      } else {
+        // Try web fallback
+        await Linking.openURL(webUrl);
+      }
+    } catch (error) {
+      console.error('Error opening maps:', error);
+      Alert.alert(
+        'Error',
+        'Could not open maps application. Please make sure you have Google Maps installed.',
+      );
+    }
+  };
+
   const renderSessionItem = ({ item }: { item: Session }) => (
     <View style={styles(theme).card}>
       <View style={styles(theme).cardHeader}>
@@ -77,6 +116,14 @@ const SessionsListScreen = ({ navigation }: any) => {
           {item.name}
         </Text>
         <View style={styles(theme).headerActions}>
+          {item.gpsLocation && (
+            <IconButton
+              icon="map-marker"
+              size={20}
+              onPress={() => openGoogleMaps(item)}
+              iconColor="#F7F7FF"
+            />
+          )}
           <IconButton
             icon="pencil"
             size={20}
