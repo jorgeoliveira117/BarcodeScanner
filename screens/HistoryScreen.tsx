@@ -134,41 +134,35 @@ const HistoryScreen = ({ route, navigation }: any) => {
   };
 
   const renderBarcodeItem = ({ item }: { item: Barcode }) => (
-    <Card style={styles(theme).card}>
-      <Card.Content>
-        <View style={styles(theme).cardHeader}>
-          <Text style={styles(theme).barcodeType}>
-            {item.type.toUpperCase()}
+    <View style={styles(theme).card}>
+      <View style={styles(theme).cardHeader}>
+        <Text style={styles(theme).barcodeType}>{item.type.toUpperCase()}</Text>
+        <View style={styles(theme).headerActions}>
+          <Text style={styles(theme).timestamp}>
+            {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
           </Text>
-          <View style={styles(theme).headerActions}>
-            <Text style={styles(theme).timestamp}>
-              {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
-            </Text>
-            <IconButton
-              icon="delete"
-              size={16}
-              onPress={() => handleDeleteBarcode(item.id)}
-            />
-          </View>
+          <IconButton
+            icon="delete"
+            size={16}
+            onPress={() => handleDeleteBarcode(item.id)}
+          />
         </View>
-        <Text style={styles(theme).barcodeValue}>{item.value}</Text>
-
-        {/* Add photo display */}
-        {item.photoPath && (
-          <TouchableOpacity
-            style={styles(theme).photoContainer}
-            onPress={() => showPhotoModal(item.photoPath, item.value)}
-          >
-            <Image
-              source={{ uri: `file://${item.photoPath}` }}
-              style={styles(theme).thumbnail}
-              resizeMode="cover"
-            />
-            <Text style={styles(theme).photoLabel}>📷 Tap to view photo</Text>
-          </TouchableOpacity>
-        )}
-      </Card.Content>
-    </Card>
+      </View>
+      <Text style={styles(theme).barcodeValue}>{item.value}</Text>
+      {/* Add photo display */}
+      {item.photoPath && (
+        <TouchableOpacity
+          style={styles(theme).photoContainer}
+          onPress={() => showPhotoModal(item.photoPath, item.value)}
+        >
+          <Image
+            source={{ uri: `file://${item.photoPath}` }}
+            style={styles(theme).thumbnail}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
   if (!session) {
@@ -330,12 +324,15 @@ const styles = (theme: any) =>
     },
     card: {
       marginBottom: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
+      paddingHorizontal: 8,
     },
     cardHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 8,
     },
     headerActions: {
       flexDirection: 'row',
@@ -345,10 +342,11 @@ const styles = (theme: any) =>
       fontSize: 12,
       fontWeight: 'bold',
       color: theme.colors.primary,
-      backgroundColor: theme.colors.onSurfaceVariant,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 4,
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
     },
     timestamp: {
       fontSize: 12,
@@ -358,9 +356,11 @@ const styles = (theme: any) =>
     barcodeValue: {
       fontSize: 16,
       fontFamily: 'monospace',
+      color: theme.colors.text,
+      marginLeft: 2,
+      marginBottom: 8,
     },
     photoContainer: {
-      marginTop: 10,
       alignItems: 'center',
       padding: 8,
       borderRadius: 8,
@@ -369,7 +369,7 @@ const styles = (theme: any) =>
       width: 100,
       height: 100,
       borderRadius: 8,
-      marginBottom: 5,
+      marginBottom: 6,
     },
     photoLabel: {
       fontSize: 12,
