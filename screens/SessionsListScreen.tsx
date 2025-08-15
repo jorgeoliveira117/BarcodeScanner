@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Alert,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import {
   Button,
   Card,
@@ -44,6 +51,10 @@ const SessionsListScreen = ({ navigation }: any) => {
         },
       ],
     );
+  };
+
+  const handleGoBack = () => {
+    navigation.goBack();
   };
 
   const handleResumeSession = (session: Session) => {
@@ -134,55 +145,94 @@ const SessionsListScreen = ({ navigation }: any) => {
   return (
     <View style={styles(theme).container}>
       <View style={styles(theme).header}>
-        <Text style={styles(theme).countText}>
-          {sessions.length} session(s)
+        <IconButton
+          icon="arrow-left"
+          size={24}
+          iconColor="#F7F7FF"
+          onPress={handleGoBack}
+          style={styles(theme).backButton}
+        />
+        <Text style={styles(theme).headerTitle} variant="headlineSmall">
+          Session List
         </Text>
+        <View style={styles(theme).headerSpacer} />
       </View>
-
-      {sessions.length === 0 ? (
-        <View style={styles(theme).emptyContainer}>
-          <Text style={styles(theme).emptyText}>No sessions created yet</Text>
-          <Button
-            mode="contained"
-            onPress={() =>
-              navigation.navigate('SessionForm', { mode: 'create' })
-            }
-            style={styles(theme).createButton}
-          >
-            Create Your First Session
-          </Button>
-        </View>
-      ) : (
-        <FlatList
-          data={sessions}
-          renderItem={renderSessionItem}
-          keyExtractor={item => item.id.toString()}
-          style={styles(theme).list}
+      <ScrollView style={styles(theme).scrollView}>
+        {sessions.length > 0 && (
+          <Text style={styles(theme).countText}>
+            {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
+          </Text>
+        )}
+        {sessions.length === 0 ? (
+          <View style={styles(theme).emptyContainer}>
+            <Text style={styles(theme).emptyText}>No sessions created yet</Text>
+            <Button
+              mode="contained"
+              onPress={() =>
+                navigation.navigate('SessionForm', { mode: 'create' })
+              }
+              style={styles(theme).createButton}
+            >
+              Create Your First Session
+            </Button>
+          </View>
+        ) : (
+          <FlatList
+            data={sessions}
+            renderItem={renderSessionItem}
+            keyExtractor={item => item.id.toString()}
+            style={styles(theme).list}
+          />
+        )}
+      </ScrollView>
+      {sessions.length > 0 && (
+        <FAB
+          icon="plus"
+          style={styles(theme).fab}
+          onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
         />
       )}
-
-      <FAB
-        icon="plus"
-        style={styles(theme).fab}
-        onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
-      />
     </View>
   );
 };
 
 const styles = (theme: any) =>
   StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: 8,
+      paddingVertical: 12,
+      paddingTop: Platform.OS === 'ios' ? 50 : 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.outlineVariant,
+    },
+    backButton: {
+      margin: 0,
+    },
+    headerTitle: {
+      color: theme.colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    headerSpacer: {
+      width: 40, // Same width as back button to center the title
+    },
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    header: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
+    scrollView: {
+      flex: 1,
+      position: 'relative',
     },
     countText: {
       fontSize: 14,
       color: theme.colors.text,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
     },
     list: {
       flex: 1,
@@ -251,7 +301,7 @@ const styles = (theme: any) =>
       fontSize: 16,
       textAlign: 'center',
       marginBottom: 20,
-      color: theme.colors.outlineVariant,
+      color: theme.colors.text,
     },
     createButton: {
       paddingVertical: 5,

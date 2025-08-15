@@ -199,7 +199,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         <IconButton
           icon="arrow-left"
           size={24}
-          iconColor="#ffffff"
+          iconColor="#F7F7FF"
           onPress={handleGoBack}
           style={styles(theme).backButton}
         />

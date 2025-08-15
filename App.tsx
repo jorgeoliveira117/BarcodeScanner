@@ -62,7 +62,7 @@ function App() {
           <Stack.Screen
             name="SessionsList"
             component={SessionsListScreen}
-            options={{ title: 'Sessions', headerShown: true }}
+            options={{ title: 'Sessions', headerShown: false }}
           />
           <Stack.Screen
             name="SessionForm"
