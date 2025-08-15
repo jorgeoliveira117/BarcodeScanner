@@ -15,6 +15,7 @@ import {
   IconButton,
   Chip,
   useTheme,
+  Icon,
 } from 'react-native-paper';
 import { getSessions, deleteSession, Session } from '../utils/storage';
 
@@ -114,9 +115,23 @@ const SessionsListScreen = ({ navigation }: any) => {
                 : styles(theme).incompleteChip,
             ]}
           >
-            {item.barcodes.length >= item.expectedCodes
-              ? '✅ Complete'
-              : '⏳ In Progress'}
+            {item.barcodes.length >= item.expectedCodes ? (
+              <View style={styles(theme).chipContent}>
+                <Icon source="check" size={16} color="#F7F7FF" />
+                <Text style={styles(theme).completeChipText}>Complete</Text>
+              </View>
+            ) : (
+              <View style={styles(theme).chipContent}>
+                <Icon
+                  source="timer-sand"
+                  size={16}
+                  color={theme.colors.background}
+                />
+                <Text style={styles(theme).incompleteChipText}>
+                  In Progress
+                </Text>
+              </View>
+            )}
           </Chip>
         </View>
 
@@ -277,12 +292,25 @@ const styles = (theme: any) =>
       marginRight: 8,
       marginBottom: 4,
     },
+    chipContent: {
+      flexDirection: 'row',
+      gap: 4,
+      alignItems: 'center',
+      flex: 1,
+    },
     completeChip: {
       backgroundColor: theme.colors.success,
       borderColor: theme.colors.success,
     },
+    completeChipText: {
+      color: theme.colors.text,
+    },
     incompleteChip: {
       backgroundColor: theme.colors.tertiary,
+      borderColor: theme.colors.tertiary,
+    },
+    incompleteChipText: {
+      color: theme.colors.background,
     },
     buttonContainer: {
       flexDirection: 'row',
