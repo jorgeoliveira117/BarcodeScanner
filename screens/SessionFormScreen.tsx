@@ -291,7 +291,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
                   styles(theme).expectedChipText,
               ]}
             >
-              {type}
+              {type.toUpperCase()}
             </Chip>
           ))}
         </View>
@@ -322,7 +322,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
                 codesToIgnore.includes(type) && styles(theme).ignoreChipText,
               ]}
             >
-              {type}
+              {type.toUpperCase()}
             </Chip>
           ))}
         </View>
@@ -411,7 +411,6 @@ const styles = (theme: any) =>
       alignItems: 'center',
       paddingVertical: 8,
       paddingHorizontal: 12,
-      backgroundColor: '#f8f9fa',
       borderRadius: 4,
       marginBottom: 8,
     },
@@ -423,6 +422,7 @@ const styles = (theme: any) =>
     readOnlyValue: {
       fontSize: 14,
       fontFamily: 'monospace',
+      color: theme.colors.text,
     },
     sectionTitle: {
       fontSize: 16,
