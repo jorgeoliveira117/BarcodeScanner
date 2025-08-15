@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+  PermissionsAndroid,
+} from 'react-native';
 import {
   Button,
   TextInput,
@@ -11,12 +18,14 @@ import {
   useTheme,
   IconButton,
 } from 'react-native-paper';
+import Geolocation from '@react-native-community/geolocation';
 import {
   BARCODE_TYPES,
   createSession,
   modifySession,
   Session,
   validateSessionCodes,
+  GPSLocation,
 } from '../utils/storage';
 import { CodeType } from 'react-native-vision-camera';
 
@@ -38,6 +47,10 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   // Initialize form values based on mode
   const [name, setName] = useState(session?.name || '');
   const [location, setLocation] = useState(session?.location || '');
+  const [gpsLocation, setGpsLocation] = useState<GPSLocation | null>(
+    session?.gpsLocation || null,
+  );
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [expectedCodes, setExpectedCodes] = useState(
     session?.expectedCodes?.toString() || '',
   );
@@ -99,6 +112,78 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     return Object.values(newErrors).every(error => error === '');
   };
 
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message:
+              'This app needs access to location to set GPS coordinates for sessions',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn('Location permission error:', err);
+        return false;
+      }
+    }
+    return true; // iOS handles permissions through Info.plist
+  };
+
+  const getCurrentLocation = async () => {
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      Alert.alert(
+        'Permission Denied',
+        'Location permission is required to get GPS coordinates.',
+      );
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    Geolocation.getCurrentPosition(
+      (position: any) => {
+        const newGpsLocation: GPSLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          timestamp: new Date().toISOString(),
+        };
+        setGpsLocation(newGpsLocation);
+        setIsGettingLocation(false);
+        Alert.alert(
+          'Location Set',
+          `GPS coordinates captured:\nLat: ${position.coords.latitude.toFixed(
+            6,
+          )}\nLng: ${position.coords.longitude.toFixed(6)}`,
+        );
+      },
+      (error: any) => {
+        setIsGettingLocation(false);
+        console.error('Location error:', error);
+        Alert.alert(
+          'Location Error',
+          'Failed to get current location. Please check your GPS settings and try again.',
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      },
+    );
+  };
+
+  const clearGpsLocation = () => {
+    setGpsLocation(null);
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -112,6 +197,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         await modifySession(session.id, {
           name: name.trim(),
           location: location.trim(),
+          gpsLocation: gpsLocation || undefined,
           expectedCodeTypes,
           codesToIgnore,
           expectedCodes: parseInt(expectedCodes),
@@ -134,6 +220,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           name: name.trim(),
           folderName: '', // This will be auto-generated
           location: location.trim(),
+          gpsLocation: gpsLocation || undefined,
           expectedCodeTypes,
           codesToIgnore,
           expectedCodes: parseInt(expectedCodes),
@@ -258,6 +345,66 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         <HelperText type="error" visible={!!errors.location}>
           {errors.location}
         </HelperText>
+
+        <Text style={styles(theme).sectionTitle}>GPS Location (Optional)</Text>
+        <View style={styles(theme).gpsContainer}>
+          {gpsLocation ? (
+            <View style={styles(theme).gpsInfoContainer}>
+              <View style={styles(theme).gpsInfo}>
+                <Text style={styles(theme).gpsLabel}>Latitude:</Text>
+                <Text style={styles(theme).gpsValue}>
+                  {gpsLocation.latitude.toFixed(6)}
+                </Text>
+              </View>
+              <View style={styles(theme).gpsInfo}>
+                <Text style={styles(theme).gpsLabel}>Longitude:</Text>
+                <Text style={styles(theme).gpsValue}>
+                  {gpsLocation.longitude.toFixed(6)}
+                </Text>
+              </View>
+              {gpsLocation.accuracy && (
+                <View style={styles(theme).gpsInfo}>
+                  <Text style={styles(theme).gpsLabel}>Accuracy:</Text>
+                  <Text style={styles(theme).gpsValue}>
+                    ±{gpsLocation.accuracy.toFixed(1)}m
+                  </Text>
+                </View>
+              )}
+              <Text style={styles(theme).gpsTimestamp}>
+                Captured: {new Date(gpsLocation.timestamp).toLocaleString()}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles(theme).noGpsText}>
+              No GPS location set. Tap the button below to get current location.
+            </Text>
+          )}
+          <View style={styles(theme).gpsButtonContainer}>
+            <Button
+              mode="outlined"
+              onPress={getCurrentLocation}
+              style={styles(theme).gpsButton}
+              loading={isGettingLocation}
+              disabled={isGettingLocation}
+              icon="crosshairs-gps"
+            >
+              {isGettingLocation
+                ? 'Getting Location...'
+                : 'Get Current Location'}
+            </Button>
+            {gpsLocation && (
+              <Button
+                mode="text"
+                onPress={clearGpsLocation}
+                style={styles(theme).clearGpsButton}
+                textColor={theme.colors.error}
+                icon="delete"
+              >
+                Clear Location
+              </Button>
+            )}
+          </View>
+        </View>
 
         <TextInput
           label="Expected Number of Codes *"
@@ -497,6 +644,60 @@ const styles = (theme: any) =>
     },
     bottomSpacing: {
       height: 20,
+    },
+    // GPS Location styles
+    gpsContainer: {
+      marginBottom: 20,
+      padding: 12,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.outline,
+    },
+    gpsInfoContainer: {
+      marginBottom: 12,
+    },
+    gpsInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    gpsLabel: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.colors.onSurfaceVariant,
+    },
+    gpsValue: {
+      fontSize: 14,
+      fontFamily: 'monospace',
+      color: theme.colors.primary,
+      fontWeight: 'bold',
+    },
+    gpsTimestamp: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: 'center',
+      marginTop: 8,
+      fontStyle: 'italic',
+    },
+    noGpsText: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: 'center',
+      fontStyle: 'italic',
+      marginBottom: 12,
+    },
+    gpsButtonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+    },
+    gpsButton: {
+      flex: 1,
+    },
+    clearGpsButton: {
+      flex: 0.5,
     },
   });
 

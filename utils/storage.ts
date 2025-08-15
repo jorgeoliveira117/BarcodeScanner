@@ -27,12 +27,20 @@ export interface Barcode {
   photoPath?: string;
 }
 
+export interface GPSLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  timestamp: string;
+}
+
 export interface Session {
   id: number; // Unique and can't be changed
   folderName: string; // Unique and can't be changed
   barcodes: Barcode[];
   name: string;
   location: string;
+  gpsLocation?: GPSLocation;
   expectedCodeTypes: CodeType[];
   expectedCodes: number;
   codesToIgnore: CodeType[];
@@ -279,14 +287,32 @@ export const exportSessionToCSV = async (
     }
 
     const barcodes = session.barcodes;
-    const header = 'ID,Value,Type,Timestamp,Date,Time\n';
+    let header = 'ID,Value,Type,Timestamp,Date,Time';
+
+    // Add GPS columns if session has GPS location
+    if (session.gpsLocation) {
+      header +=
+        ',Session_Latitude,Session_Longitude,Session_GPS_Accuracy,Session_GPS_Timestamp';
+    }
+    header += '\n';
 
     const rows = barcodes
       .map(barcode => {
         const date = new Date(barcode.timestamp);
         const dateStr = date.toISOString().split('T')[0];
         const timeStr = date.toTimeString().split(' ')[0];
-        return `"${barcode.id}","${barcode.value}","${barcode.type}","${barcode.timestamp}","${dateStr}","${timeStr}"`;
+        let row = `"${barcode.id}","${barcode.value}","${barcode.type}","${barcode.timestamp}","${dateStr}","${timeStr}"`;
+
+        // Add GPS data if available
+        if (session.gpsLocation) {
+          row += `,"${session.gpsLocation.latitude}","${
+            session.gpsLocation.longitude
+          }","${session.gpsLocation.accuracy || 'N/A'}","${
+            session.gpsLocation.timestamp
+          }"`;
+        }
+
+        return row;
       })
       .join('\n');
 
