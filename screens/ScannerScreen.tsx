@@ -13,7 +13,14 @@ import {
   useCameraDevices,
   useCodeScanner,
 } from 'react-native-vision-camera';
-import { Button, Text, Card, Snackbar, useTheme } from 'react-native-paper';
+import {
+  Button,
+  Text,
+  Card,
+  Snackbar,
+  useTheme,
+  ProgressBar,
+} from 'react-native-paper';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   addBarcodeToSession,
@@ -720,22 +727,32 @@ const ScannerScreen = ({ route, navigation }: any) => {
       />
       <View style={styles(theme).overlay}>
         {session && (
-          <Card style={styles(theme).sessionInfoCard}>
-            <Card.Content style={styles(theme).sessionInfo}>
+          <View style={styles(theme).sessionInfoCard}>
+            <ProgressBar
+              progress={session.barcodes.length / session.expectedCodes}
+              color={
+                session.barcodes.length >= session.expectedCodes
+                  ? '#70A288'
+                  : theme.colors.primary
+              }
+              style={styles(theme).progressBar}
+            />
+            <View style={styles(theme).row}>
               <Text style={styles(theme).sessionName}>{session.name}</Text>
               <Text style={styles(theme).sessionProgress}>
                 {session.barcodes.length} / {session.expectedCodes} barcodes
               </Text>
-              <Text style={styles(theme).expectedTypes}>
-                Expected: {session.expectedCodeTypes.join(', ')}
-              </Text>
-            </Card.Content>
-          </Card>
+            </View>
+          </View>
         )}
 
-        {session && session.barcodes.length > 0 && (
-          <Card style={styles(theme).latestBarcodeCard}>
-            <Card.Content style={styles(theme).latestBarcodeContent}>
+        <View style={styles(theme).scanAreaContainer}>
+          <View style={styles(theme).scanArea} />
+        </View>
+
+        <View style={styles(theme).bottomContainer}>
+          {session && session.barcodes.length > 0 && (
+            <View style={styles(theme).latestBarcodeContainer}>
               <View style={styles(theme).latestBarcodeHeader}>
                 <Text style={styles(theme).latestBarcodeTitle}>
                   Latest Scan
@@ -753,46 +770,40 @@ const ScannerScreen = ({ route, navigation }: any) => {
                 </Button>
               </View>
               <View style={styles(theme).latestBarcodeInfo}>
-                <Text style={styles(theme).latestBarcodeType}>
-                  {session.barcodes[0].type.toUpperCase()}
-                </Text>
-                <Text
-                  style={styles(theme).latestBarcodeValue}
-                  numberOfLines={2}
-                >
-                  {session.barcodes[0].value}
-                </Text>
+                <View style={styles(theme).latestBarcodeCol}>
+                  <Text style={styles(theme).latestBarcodeType}>
+                    {session.barcodes[0].type.toUpperCase()}
+                  </Text>
+                  <Text
+                    style={styles(theme).latestBarcodeValue}
+                    numberOfLines={2}
+                  >
+                    {session.barcodes[0].value}
+                  </Text>
+                </View>
                 <Text style={styles(theme).latestBarcodeTime}>
                   {new Date(session.barcodes[0].timestamp).toLocaleTimeString()}
                 </Text>
               </View>
-            </Card.Content>
-          </Card>
-        )}
-
-        <View style={styles(theme).scanAreaContainer}>
-          <View style={styles(theme).scanArea} />
-          <Text style={styles(theme).instructionText}>
-            Point your camera at a barcode
-          </Text>
-        </View>
-
-        <View style={styles(theme).buttonContainer}>
-          <Button
-            mode="outlined"
-            onPress={() => navigation.navigate('History', { sessionId })}
-            style={styles(theme).historyButton}
-            textColor="#fff"
-          >
-            View History
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() => navigation.goBack()}
-            style={styles(theme).backButton}
-          >
-            Back
-          </Button>
+            </View>
+          )}
+          <View style={styles(theme).buttonContainer}>
+            <Button
+              mode="contained"
+              onPress={() => navigation.goBack()}
+              style={styles(theme).backButton}
+            >
+              Back
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={() => navigation.navigate('History', { sessionId })}
+              style={styles(theme).historyButton}
+              textColor="#fff"
+            >
+              View History
+            </Button>
+          </View>
         </View>
       </View>
 
@@ -855,16 +866,30 @@ const styles = (theme: any) =>
       bottom: 0,
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 50,
     },
     sessionInfoCard: {
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      borderRadius: 8,
+      backgroundColor: 'rgba(38, 109, 211, 0.3)',
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
       marginHorizontal: 20,
+      paddingBottom: 12,
+      width: '100%',
     },
     sessionInfo: {
       paddingVertical: 8,
       paddingHorizontal: 12,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+    },
+    progressBar: {
+      flex: 1,
+      height: 12,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      marginBottom: 8,
     },
     sessionName: {
       color: theme.colors.text,
@@ -878,17 +903,8 @@ const styles = (theme: any) =>
       textAlign: 'center',
       marginTop: 4,
     },
-    expectedTypes: {
-      color: theme.colors.text,
-      fontSize: 12,
-      textAlign: 'center',
-      marginTop: 4,
-    },
-    latestBarcodeCard: {
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    latestBarcodeContainer: {
       borderRadius: 8,
-      marginHorizontal: 20,
-      marginTop: 10,
     },
     latestBarcodeContent: {
       paddingVertical: 8,
@@ -912,10 +928,15 @@ const styles = (theme: any) =>
       borderWidth: 1,
     },
     latestBarcodeInfo: {
-      alignItems: 'flex-start',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    latestBarcodeCol: {
+      gap: 1,
     },
     latestBarcodeType: {
-      color: theme.colors.success,
+      color: theme.colors.primary,
       fontSize: 10,
       fontWeight: 'bold',
       marginBottom: 2,
@@ -937,38 +958,27 @@ const styles = (theme: any) =>
     scanArea: {
       width: 250,
       height: 250,
-      borderWidth: 2,
-      borderColor: theme.colors.text,
+      borderWidth: 1,
+      borderColor: '#ffffff7c',
+      borderRadius: 32,
       backgroundColor: 'transparent',
     },
-    instructionText: {
-      color: theme.colors.text,
-      fontSize: 16,
-      marginTop: 20,
-      textAlign: 'center',
+    bottomContainer: {
+      width: '100%',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 4,
+      backgroundColor: theme.colors.background,
     },
     buttonContainer: {
       flexDirection: 'row',
       gap: 12,
-      paddingHorizontal: 20,
     },
     historyButton: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      borderColor: theme.colors.text,
     },
     backButton: {
       flex: 1,
-    },
-    storageButton: {
-      position: 'absolute',
-      bottom: 100,
-      marginHorizontal: 20,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    storageButtonLabel: {
-      color: theme.colors.text,
-      fontSize: 12,
     },
     permissionContainer: {
       flex: 1,
@@ -998,7 +1008,7 @@ const styles = (theme: any) =>
     // Notification system styles
     snackbar: {
       position: 'absolute',
-      bottom: 100,
+      bottom: 200,
       left: 16,
       right: 16,
       borderRadius: 8,
