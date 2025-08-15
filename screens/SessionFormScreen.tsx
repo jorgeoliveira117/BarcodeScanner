@@ -208,7 +208,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
-      <ScrollView>
+      <ScrollView style={styles(theme).scrollContent}>
         <View style={styles(theme).scrollContentSpacer} />
         {isEditMode && session && (
           <>
@@ -362,6 +362,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
             {isEditMode ? 'Save Changes' : 'Create Session'}
           </Button>
         </View>
+        <View style={styles(theme).bottomSpacing} />
       </ScrollView>
     </View>
   );
@@ -394,7 +395,6 @@ const styles = (theme: any) =>
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
-      padding: 16,
     },
     card: {
       margin: 16,
@@ -488,8 +488,15 @@ const styles = (theme: any) =>
     submitButton: {
       flex: 1,
     },
+    scrollContent: {
+      flex: 1,
+      padding: 16,
+    },
     scrollContentSpacer: {
       padding: 4,
+    },
+    bottomSpacing: {
+      height: 20,
     },
   });
 

@@ -188,34 +188,32 @@ const SessionsListScreen = ({ navigation }: any) => {
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
-      <ScrollView style={styles(theme).scrollView}>
-        {sessions.length > 0 && (
-          <Text style={styles(theme).countText}>
-            {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
-          </Text>
-        )}
-        {sessions.length === 0 ? (
-          <View style={styles(theme).emptyContainer}>
-            <Text style={styles(theme).emptyText}>No sessions created yet</Text>
-            <Button
-              mode="contained"
-              onPress={() =>
-                navigation.navigate('SessionForm', { mode: 'create' })
-              }
-              style={styles(theme).createButton}
-            >
-              Create Your First Session
-            </Button>
-          </View>
-        ) : (
-          <FlatList
-            data={sessions}
-            renderItem={renderSessionItem}
-            keyExtractor={item => item.id.toString()}
-            style={styles(theme).list}
-          />
-        )}
-      </ScrollView>
+      {sessions.length > 0 && (
+        <Text style={styles(theme).countText}>
+          {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
+        </Text>
+      )}
+      {sessions.length === 0 ? (
+        <View style={styles(theme).emptyContainer}>
+          <Text style={styles(theme).emptyText}>No sessions created yet</Text>
+          <Button
+            mode="contained"
+            onPress={() =>
+              navigation.navigate('SessionForm', { mode: 'create' })
+            }
+            style={styles(theme).createButton}
+          >
+            Create Your First Session
+          </Button>
+        </View>
+      ) : (
+        <FlatList
+          data={sessions}
+          renderItem={renderSessionItem}
+          keyExtractor={item => item.id.toString()}
+          style={styles(theme).list}
+        />
+      )}
       {sessions.length > 0 && (
         <FAB
           icon="plus"
