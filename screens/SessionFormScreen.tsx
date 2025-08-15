@@ -152,17 +152,10 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         const newGpsLocation: GPSLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
           timestamp: new Date().toISOString(),
         };
         setGpsLocation(newGpsLocation);
         setIsGettingLocation(false);
-        Alert.alert(
-          'Location Set',
-          `GPS coordinates captured:\nLat: ${position.coords.latitude.toFixed(
-            6,
-          )}\nLng: ${position.coords.longitude.toFixed(6)}`,
-        );
       },
       (error: any) => {
         setIsGettingLocation(false);
@@ -181,7 +174,23 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   };
 
   const clearGpsLocation = () => {
-    setGpsLocation(null);
+    Alert.alert(
+      'Clear GPS Location',
+      'Are you sure you want to remove the GPS coordinates from this session?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            setGpsLocation(null);
+          },
+        },
+      ],
+    );
   };
 
   const handleSubmit = async () => {
@@ -346,66 +355,6 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           {errors.location}
         </HelperText>
 
-        <Text style={styles(theme).sectionTitle}>GPS Location (Optional)</Text>
-        <View style={styles(theme).gpsContainer}>
-          {gpsLocation ? (
-            <View style={styles(theme).gpsInfoContainer}>
-              <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>Latitude:</Text>
-                <Text style={styles(theme).gpsValue}>
-                  {gpsLocation.latitude.toFixed(6)}
-                </Text>
-              </View>
-              <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>Longitude:</Text>
-                <Text style={styles(theme).gpsValue}>
-                  {gpsLocation.longitude.toFixed(6)}
-                </Text>
-              </View>
-              {gpsLocation.accuracy && (
-                <View style={styles(theme).gpsInfo}>
-                  <Text style={styles(theme).gpsLabel}>Accuracy:</Text>
-                  <Text style={styles(theme).gpsValue}>
-                    ±{gpsLocation.accuracy.toFixed(1)}m
-                  </Text>
-                </View>
-              )}
-              <Text style={styles(theme).gpsTimestamp}>
-                Captured: {new Date(gpsLocation.timestamp).toLocaleString()}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles(theme).noGpsText}>
-              No GPS location set. Tap the button below to get current location.
-            </Text>
-          )}
-          <View style={styles(theme).gpsButtonContainer}>
-            <Button
-              mode="outlined"
-              onPress={getCurrentLocation}
-              style={styles(theme).gpsButton}
-              loading={isGettingLocation}
-              disabled={isGettingLocation}
-              icon="crosshairs-gps"
-            >
-              {isGettingLocation
-                ? 'Getting Location...'
-                : 'Get Current Location'}
-            </Button>
-            {gpsLocation && (
-              <Button
-                mode="text"
-                onPress={clearGpsLocation}
-                style={styles(theme).clearGpsButton}
-                textColor={theme.colors.error}
-                icon="delete"
-              >
-                Clear Location
-              </Button>
-            )}
-          </View>
-        </View>
-
         <TextInput
           label="Expected Number of Codes *"
           value={expectedCodes}
@@ -482,6 +431,59 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         <HelperText type="error" visible={!!errors.codesToIgnore}>
           {errors.codesToIgnore}
         </HelperText>
+
+        <Text style={styles(theme).sectionTitle}>GPS Location (Optional)</Text>
+
+        <View style={styles(theme).gpsContainer}>
+          {gpsLocation ? (
+            <View style={styles(theme).gpsInfoContainer}>
+              <View style={styles(theme).gpsInfo}>
+                <Text style={styles(theme).gpsLabel}>Latitude:</Text>
+                <Text style={styles(theme).gpsValue}>
+                  {gpsLocation.latitude.toFixed(6)}
+                </Text>
+              </View>
+              <View style={styles(theme).gpsInfo}>
+                <Text style={styles(theme).gpsLabel}>Longitude:</Text>
+                <Text style={styles(theme).gpsValue}>
+                  {gpsLocation.longitude.toFixed(6)}
+                </Text>
+              </View>
+              <Text style={styles(theme).gpsTimestamp}>
+                Updated on {new Date(gpsLocation.timestamp).toLocaleString()}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles(theme).noGpsText}>
+              No GPS location set. Tap the button below to get current location.
+            </Text>
+          )}
+          <View style={styles(theme).gpsButtonContainer}>
+            <Button
+              mode="outlined"
+              onPress={getCurrentLocation}
+              style={styles(theme).gpsButton}
+              loading={isGettingLocation}
+              disabled={isGettingLocation}
+              icon="crosshairs-gps"
+            >
+              {isGettingLocation
+                ? 'Getting Location...'
+                : 'Get Current Location'}
+            </Button>
+            {gpsLocation && (
+              <Button
+                mode="text"
+                onPress={clearGpsLocation}
+                style={styles(theme).clearGpsButton}
+                textColor={theme.colors.error}
+                icon="delete"
+              >
+                Clear Location
+              </Button>
+            )}
+          </View>
+        </View>
 
         <View style={styles(theme).switchContainer}>
           <Text style={styles(theme).switchLabel}>Auto-save Pictures</Text>
@@ -648,11 +650,6 @@ const styles = (theme: any) =>
     // GPS Location styles
     gpsContainer: {
       marginBottom: 20,
-      padding: 12,
-      backgroundColor: theme.colors.surface,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.colors.outline,
     },
     gpsInfoContainer: {
       marginBottom: 12,
@@ -683,14 +680,10 @@ const styles = (theme: any) =>
     noGpsText: {
       fontSize: 14,
       color: theme.colors.onSurfaceVariant,
-      textAlign: 'center',
       fontStyle: 'italic',
       marginBottom: 12,
     },
     gpsButtonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       gap: 8,
     },
     gpsButton: {
