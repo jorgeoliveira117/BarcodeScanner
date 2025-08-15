@@ -77,7 +77,7 @@ function App() {
           <Stack.Screen
             name="History"
             component={HistoryScreen}
-            options={{ title: 'Session History', headerShown: true }}
+            options={{ title: 'Session History', headerShown: false }}
           />
           <Stack.Screen
             name="Settings"

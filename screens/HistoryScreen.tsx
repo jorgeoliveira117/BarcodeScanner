@@ -7,6 +7,7 @@ import {
   Share,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
 import {
   Button,
@@ -15,6 +16,7 @@ import {
   FAB,
   Searchbar,
   IconButton,
+  useTheme,
 } from 'react-native-paper';
 import {
   getBarcodesFromSession,
@@ -34,6 +36,7 @@ interface Barcode {
 }
 
 const HistoryScreen = ({ route, navigation }: any) => {
+  const theme = useTheme();
   const { sessionId } = route.params || {};
   const [session, setSession] = useState<Session | null>(null);
   const [barcodes, setBarcodes] = useState<Barcode[]>([]);
@@ -69,6 +72,10 @@ const HistoryScreen = ({ route, navigation }: any) => {
       const sessionBarcodes = await getBarcodesFromSession(sessionId);
       setBarcodes(sessionBarcodes);
     }
+  };
+
+  const handleGoBack = () => {
+    navigation.goBack();
   };
 
   const handleExport = async () => {
@@ -126,12 +133,14 @@ const HistoryScreen = ({ route, navigation }: any) => {
   };
 
   const renderBarcodeItem = ({ item }: { item: Barcode }) => (
-    <Card style={styles.card}>
+    <Card style={styles(theme).card}>
       <Card.Content>
-        <View style={styles.cardHeader}>
-          <Text style={styles.barcodeType}>{item.type.toUpperCase()}</Text>
-          <View style={styles.headerActions}>
-            <Text style={styles.timestamp}>
+        <View style={styles(theme).cardHeader}>
+          <Text style={styles(theme).barcodeType}>
+            {item.type.toUpperCase()}
+          </Text>
+          <View style={styles(theme).headerActions}>
+            <Text style={styles(theme).timestamp}>
               {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
             </Text>
             <IconButton
@@ -141,20 +150,20 @@ const HistoryScreen = ({ route, navigation }: any) => {
             />
           </View>
         </View>
-        <Text style={styles.barcodeValue}>{item.value}</Text>
+        <Text style={styles(theme).barcodeValue}>{item.value}</Text>
 
         {/* Add photo display */}
         {item.photoPath && (
           <TouchableOpacity
-            style={styles.photoContainer}
+            style={styles(theme).photoContainer}
             onPress={() => showPhotoModal(item.photoPath, item.value)}
           >
             <Image
               source={{ uri: `file://${item.photoPath}` }}
-              style={styles.thumbnail}
+              style={styles(theme).thumbnail}
               resizeMode="cover"
             />
-            <Text style={styles.photoLabel}>📷 Tap to view photo</Text>
+            <Text style={styles(theme).photoLabel}>📷 Tap to view photo</Text>
           </TouchableOpacity>
         )}
       </Card.Content>
@@ -163,19 +172,34 @@ const HistoryScreen = ({ route, navigation }: any) => {
 
   if (!session) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles(theme).loadingContainer}>
         <Text>Loading session...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Card style={styles.sessionCard}>
+    <View style={styles(theme).container}>
+      <View style={styles(theme).header}>
+        <IconButton
+          icon="arrow-left"
+          size={24}
+          iconColor="#F7F7FF"
+          onPress={handleGoBack}
+          style={styles(theme).backButton}
+        />
+        <Text style={styles(theme).headerTitle} variant="headlineSmall">
+          Session History
+        </Text>
+        <View style={styles(theme).headerSpacer} />
+      </View>
+      <Card style={styles(theme).sessionCard}>
         <Card.Content>
-          <Text style={styles.sessionTitle}>{session.name}</Text>
-          <Text style={styles.sessionLocation}>📍 {session.location}</Text>
-          <Text style={styles.sessionProgress}>
+          <Text style={styles(theme).sessionTitle}>{session.name}</Text>
+          <Text style={styles(theme).sessionLocation}>
+            📍 {session.location}
+          </Text>
+          <Text style={styles(theme).sessionProgress}>
             Progress: {barcodes.length} / {session.expectedCodes} barcodes
           </Text>
         </Card.Content>
@@ -185,14 +209,14 @@ const HistoryScreen = ({ route, navigation }: any) => {
         placeholder="Search barcodes..."
         onChangeText={setSearchQuery}
         value={searchQuery}
-        style={styles.searchbar}
+        style={styles(theme).searchbar}
       />
 
-      <View style={styles.header}>
-        <Text style={styles.countText}>
+      <View style={styles(theme).header}>
+        <Text style={styles(theme).countText}>
           {filteredBarcodes.length} barcode(s) found
         </Text>
-        <View style={styles.headerButtons}>
+        <View style={styles(theme).headerButtons}>
           <IconButton
             icon="export"
             mode="contained"
@@ -203,8 +227,8 @@ const HistoryScreen = ({ route, navigation }: any) => {
       </View>
 
       {filteredBarcodes.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
+        <View style={styles(theme).emptyContainer}>
+          <Text style={styles(theme).emptyText}>
             {barcodes.length === 0
               ? 'No barcodes scanned yet in this session'
               : 'No barcodes match your search'}
@@ -212,7 +236,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
           <Button
             mode="contained"
             onPress={() => navigation.navigate('Scanner', { sessionId })}
-            style={styles.scanButton}
+            style={styles(theme).scanButton}
           >
             Start Scanning
           </Button>
@@ -222,140 +246,155 @@ const HistoryScreen = ({ route, navigation }: any) => {
           data={filteredBarcodes}
           renderItem={renderBarcodeItem}
           keyExtractor={item => item.id}
-          style={styles.list}
+          style={styles(theme).list}
         />
       )}
 
       <FAB
         icon="qrcode-scan"
-        style={styles.fab}
+        style={styles(theme).fab}
         onPress={() => navigation.navigate('Scanner', { sessionId })}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sessionCard: {
-    margin: 16,
-    marginBottom: 8,
-  },
-  sessionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  sessionLocation: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  sessionProgress: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6200ea',
-  },
-  searchbar: {
-    margin: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  countText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-  },
-  list: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  card: {
-    marginBottom: 8,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  barcodeType: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#6200ea',
-    backgroundColor: '#e8eaf6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#666',
-    marginRight: 4,
-  },
-  barcodeValue: {
-    fontSize: 16,
-    fontFamily: 'monospace',
-  },
-  photoContainer: {
-    marginTop: 10,
-    alignItems: 'center',
-    padding: 8,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-  },
-  thumbnail: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginBottom: 5,
-  },
-  photoLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666',
-  },
-  scanButton: {
-    paddingVertical: 5,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#6200ea',
-  },
-});
+const styles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: 8,
+      paddingVertical: 12,
+      paddingTop: Platform.OS === 'ios' ? 50 : 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.outlineVariant,
+    },
+    backButton: {
+      margin: 0,
+    },
+    headerTitle: {
+      color: theme.colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    headerSpacer: {
+      width: 40, // Same width as back button to center the title
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sessionCard: {
+      margin: 16,
+      marginBottom: 8,
+    },
+    sessionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    sessionLocation: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+      marginBottom: 4,
+    },
+    sessionProgress: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.colors.primary,
+    },
+    searchbar: {
+      margin: 16,
+    },
+    countText: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+    },
+    headerButtons: {
+      flexDirection: 'row',
+    },
+    list: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    card: {
+      marginBottom: 8,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    barcodeType: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      backgroundColor: theme.colors.onSurfaceVariant,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+    },
+    timestamp: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+      marginRight: 4,
+    },
+    barcodeValue: {
+      fontSize: 16,
+      fontFamily: 'monospace',
+    },
+    photoContainer: {
+      marginTop: 10,
+      alignItems: 'center',
+      padding: 8,
+      borderRadius: 8,
+    },
+    thumbnail: {
+      width: 100,
+      height: 100,
+      borderRadius: 8,
+      marginBottom: 5,
+    },
+    photoLabel: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: 'center',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    emptyText: {
+      fontSize: 16,
+      textAlign: 'center',
+      marginBottom: 20,
+      color: theme.colors.onSurfaceVariant,
+    },
+    scanButton: {
+      paddingVertical: 5,
+    },
+    fab: {
+      position: 'absolute',
+      margin: 16,
+      right: 0,
+      bottom: 0,
+      backgroundColor: theme.colors.primary,
+    },
+  });
 
 export default HistoryScreen;
