@@ -1,30 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import {
-  Button,
-  Card,
-  Title,
-  Paragraph,
-  Text,
-  useTheme,
-  Icon,
-} from 'react-native-paper';
+import { Button, Text, useTheme, Icon } from 'react-native-paper';
 import { getSessions, Session, getSessionById } from '../utils/storage';
 import {
-  getActiveSessionId,
   getActiveSessionData,
   ActiveSessionData,
 } from '../utils/activeSession';
+import { useTranslation } from 'react-i18next';
 
 const HomeScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const theme = useTheme();
-  const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [activeSessionData, setActiveSessionData] =
     useState<ActiveSessionData | null>(null);
 
   useEffect(() => {
-    loadSessions();
     loadActiveSession();
   }, []);
 
@@ -36,11 +27,6 @@ const HomeScreen = ({ navigation }: any) => {
 
     return unsubscribe;
   }, [navigation]);
-
-  const loadSessions = async () => {
-    const allSessions = await getSessions();
-    setSessions(allSessions);
-  };
 
   const loadActiveSession = async () => {
     try {
@@ -85,28 +71,29 @@ const HomeScreen = ({ navigation }: any) => {
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffHours < 1) {
-      return 'Just now';
+      return t('home.sessionLastAccessedNow');
     } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      return `${diffHours} ${t('home.sessionLastAccessedHoursAgo')}`;
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return t('home.sessionLastAccessedYesterday');
     } else {
-      return `${diffDays} days ago`;
+      return `${diffDays} ${t('home.sessionLastAccessedDaysAgo')}`;
     }
   };
 
   return (
     <View style={styles(theme).container}>
       <Text variant="displaySmall" style={styles(theme).title}>
-        Barcode Scanner
+        {t('home.title')}
       </Text>
       <Text variant="bodyMedium" style={styles(theme).subtitle}>
-        Organize your scans into sessions. Create, manage, and track your
-        barcode scanning activities.
+        {t('home.description')}
       </Text>
       {activeSession && activeSessionData && (
         <View style={styles(theme).activeSessionContainer}>
-          <Text style={styles(theme).activeSessionLabel}>Active Session:</Text>
+          <Text style={styles(theme).activeSessionLabel}>
+            {t('home.sessionActiveLabel')}
+          </Text>
           <Text style={styles(theme).activeSessionName}>
             {activeSession.name}
           </Text>
@@ -119,12 +106,15 @@ const HomeScreen = ({ navigation }: any) => {
               <Icon source="counter" size={16} />
               <Text>
                 {activeSession.barcodes.length}{' '}
-                {activeSession.barcodes.length === 1 ? 'code' : 'codes'}
+                {activeSession.barcodes.length === 1
+                  ? t('home.sessionCodeLabel')
+                  : t('home.sessionCodesLabel')}
               </Text>
             </View>
           </View>
           <Text style={styles(theme).lastAccessedText}>
-            Last accessed: {formatLastAccessed(activeSessionData.lastAccessed)}
+            {t('home.sessionLastAccessedLabel')}{' '}
+            {formatLastAccessed(activeSessionData.lastAccessed)}
           </Text>
         </View>
       )}
@@ -142,7 +132,9 @@ const HomeScreen = ({ navigation }: any) => {
           icon={activeSession ? 'play' : 'view-list'}
           disabled={!activeSession}
         >
-          {activeSession ? 'Resume Session' : 'No Active Session'}
+          {activeSession
+            ? t('home.scannerButtonResume')
+            : t('home.scannerButtonNone')}
         </Button>
 
         <Button
@@ -151,7 +143,7 @@ const HomeScreen = ({ navigation }: any) => {
           style={styles(theme).button}
           icon="plus"
         >
-          Create Session
+          {t('home.createSessionButton')}
         </Button>
 
         <Button
@@ -160,7 +152,7 @@ const HomeScreen = ({ navigation }: any) => {
           style={styles(theme).button}
           icon="view-list"
         >
-          All Sessions
+          {t('home.sessionsListButton')}
         </Button>
 
         <Button
@@ -169,7 +161,7 @@ const HomeScreen = ({ navigation }: any) => {
           style={styles(theme).button}
           icon="cog"
         >
-          Settings
+          {t('home.settingsButton')}
         </Button>
       </View>
     </View>
