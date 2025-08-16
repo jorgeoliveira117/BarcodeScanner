@@ -9,14 +9,21 @@ import {
   Divider,
   IconButton,
   useTheme,
+  Menu,
+  TouchableRipple,
 } from 'react-native-paper';
 import Slider from '@react-native-community/slider';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { getSettings, updateSettings, AppSettings } from '../utils/settings';
 import { useTranslation } from 'react-i18next';
 
+interface LanguageOption {
+  value: string;
+  label: string;
+}
+
 const SettingsScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [settings, setSettings] = useState<AppSettings>({
     volume: 0.5,
@@ -27,6 +34,7 @@ const SettingsScreen = ({ navigation }: any) => {
   const [cameraPermission, setCameraPermission] = useState<string>('unknown');
   const [storagePermission, setStoragePermission] = useState<string>('unknown');
   const [loading, setLoading] = useState(true);
+  const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -36,7 +44,18 @@ const SettingsScreen = ({ navigation }: any) => {
   const loadSettings = async () => {
     try {
       const currentSettings = await getSettings();
+
+      // Sync with current i18n language if not set in settings
+      if (!currentSettings.language) {
+        currentSettings.language = i18n.language || 'en';
+      }
+
       setSettings(currentSettings);
+
+      // Make sure i18n is set to the correct language
+      if (currentSettings.language !== i18n.language) {
+        await i18n.changeLanguage(currentSettings.language);
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -146,6 +165,11 @@ const SettingsScreen = ({ navigation }: any) => {
       const newSettings = { ...settings, [key]: value };
       setSettings(newSettings);
       await updateSettings({ [key]: value });
+
+      // If language setting is changed, update i18n
+      if (key === 'language') {
+        await i18n.changeLanguage(value);
+      }
     } catch (error) {
       console.error('Error updating setting:', error);
       Alert.alert(
@@ -188,6 +212,21 @@ const SettingsScreen = ({ navigation }: any) => {
       default:
         return t('settings.permissions.unknown');
     }
+  };
+
+  const getCurrentLanguageLabel = () => {
+    const currentLang = settings.language || i18n.language;
+    const languageOptions = [
+      { label: 'English', value: 'en' },
+      { label: 'Italiano', value: 'it' },
+    ];
+    const option = languageOptions.find(opt => opt.value === currentLang);
+    return option ? option.label : 'English';
+  };
+
+  const handleLanguageChange = (languageValue: string) => {
+    setLanguageMenuVisible(false);
+    handleSettingChange('language', languageValue);
   };
 
   const handleGoBack = () => {
@@ -274,14 +313,50 @@ const SettingsScreen = ({ navigation }: any) => {
           </View>
         </View>
         <View style={styles(theme).settingContainer}>
-          <View style={styles(theme).settingRow}>
-            <Text style={styles(theme).settingLabel}>
-              {t('settings.languageLabel')}
-            </Text>
-            <Text style={styles(theme).settingValue}>
-              {t(`settings.languageOptions.0.label`)}
-            </Text>
-          </View>
+          <Text style={styles(theme).settingLabel}>
+            {t('settings.languageLabel')}
+          </Text>
+          <Menu
+            visible={languageMenuVisible}
+            onDismiss={() => setLanguageMenuVisible(false)}
+            anchor={
+              <TouchableRipple
+                onPress={() => setLanguageMenuVisible(true)}
+                style={styles(theme).languageSelector}
+                rippleColor={theme.colors.primary}
+              >
+                <View style={styles(theme).languageSelectorContent}>
+                  <Text style={styles(theme).settingValue}>
+                    {getCurrentLanguageLabel()}
+                  </Text>
+                  <IconButton
+                    icon="chevron-down"
+                    size={20}
+                    iconColor={theme.colors.primary}
+                    style={styles(theme).dropdownIcon}
+                  />
+                </View>
+              </TouchableRipple>
+            }
+            contentStyle={styles(theme).menuContent}
+          >
+            {(
+              t('settings.languageOptions', {
+                returnObjects: true,
+              }) as LanguageOption[]
+            ).map((language: LanguageOption) => (
+              <Menu.Item
+                key={language.value}
+                onPress={() => handleLanguageChange(language.value)}
+                title={language.label}
+                titleStyle={[
+                  styles(theme).menuItemTitle,
+                  (settings.language || i18n.language) === language.value &&
+                    styles(theme).selectedMenuItem,
+                ]}
+              />
+            ))}
+          </Menu>
         </View>
         <View style={styles(theme).settingContainer}>
           <Text style={styles(theme).settingLabel}>
@@ -450,6 +525,35 @@ const styles = (theme: any) =>
     },
     bottomSpacing: {
       height: 20,
+    },
+    languageSelector: {
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginTop: 12,
+    },
+    languageSelectorContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dropdownIcon: {
+      margin: 0,
+      padding: 0,
+    },
+    menuContent: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      marginTop: 8,
+    },
+    menuItemTitle: {
+      color: theme.colors.background,
+    },
+    selectedMenuItem: {
+      color: theme.colors.primary,
+      fontWeight: 'bold',
     },
   });
 
