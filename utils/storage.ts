@@ -287,32 +287,13 @@ export const exportSessionToCSV = async (
     }
 
     const barcodes = session.barcodes;
-    let header = 'ID,Value,Type,Timestamp,Date,Time';
+    let header = 'Barcode';
 
-    // Add GPS columns if session has GPS location
-    if (session.gpsLocation) {
-      header +=
-        ',Session_Latitude,Session_Longitude,Session_GPS_Accuracy,Session_GPS_Timestamp';
-    }
     header += '\n';
 
     const rows = barcodes
       .map(barcode => {
-        const date = new Date(barcode.timestamp);
-        const dateStr = date.toISOString().split('T')[0];
-        const timeStr = date.toTimeString().split(' ')[0];
-        let row = `"${barcode.id}","${barcode.value}","${barcode.type}","${barcode.timestamp}","${dateStr}","${timeStr}"`;
-
-        // Add GPS data if available
-        if (session.gpsLocation) {
-          row += `,"${session.gpsLocation.latitude}","${
-            session.gpsLocation.longitude
-          }","${session.gpsLocation.accuracy || 'N/A'}","${
-            session.gpsLocation.timestamp
-          }"`;
-        }
-
-        return row;
+        return barcode.value;
       })
       .join('\n');
 
@@ -326,6 +307,80 @@ export const exportSessionToCSV = async (
     return filePath;
   } catch (error) {
     console.error('Error exporting session to CSV:', error);
+    throw error;
+  }
+};
+
+// Export specific session to JSON file
+export const exportSessionToJSON = async (
+  sessionId: number,
+): Promise<string> => {
+  try {
+    const session = await getSessionById(sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    const sessionStats = await getSessionBarcodeStats(sessionId);
+
+    const exportData = {
+      exportInfo: {
+        exportDate: new Date().toISOString(),
+        appVersion: '1.0.0',
+        sessionId: session.id,
+        sessionName: session.name,
+      },
+      session: {
+        id: session.id,
+        name: session.name,
+        folderName: session.folderName,
+        location: session.location,
+        gpsLocation: session.gpsLocation,
+        expectedCodeTypes: session.expectedCodeTypes,
+        expectedCodes: session.expectedCodes,
+        codesToIgnore: session.codesToIgnore,
+        autosavePictures: session.autosavePictures,
+        barcodes: session.barcodes.map(barcode => ({
+          id: barcode.id,
+          value: barcode.value,
+          type: barcode.type,
+          timestamp: barcode.timestamp,
+          photoPath: barcode.photoPath,
+        })),
+        stats: {
+          totalBarcodes: sessionStats.totalCount,
+          completionPercentage:
+            session.expectedCodes > 0
+              ? Math.round(
+                  (sessionStats.totalCount / session.expectedCodes) * 100,
+                )
+              : 0,
+          uniqueBarcodes: [...new Set(session.barcodes.map(b => b.value))]
+            .length,
+          typeDistribution: sessionStats.typeCount,
+          scanningPeriod: {
+            firstScan: sessionStats.earliestScan?.toISOString() || null,
+            lastScan: sessionStats.latestScan?.toISOString() || null,
+          },
+        },
+      },
+    };
+
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const currentDate = new Date().toISOString().split('T')[0];
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-')
+      .split('T')[1]
+      .split('.')[0];
+    const filename = `${session.folderName}_export_${currentDate}_${timestamp}.json`;
+    const downloadPath = RNFS.DownloadDirectoryPath;
+    const filePath = `${downloadPath}/${filename}`;
+
+    await RNFS.writeFile(filePath, jsonContent, 'utf8');
+    return filePath;
+  } catch (error) {
+    console.error('Error exporting session to JSON:', error);
     throw error;
   }
 };
