@@ -287,7 +287,7 @@ export const exportSessionToCSV = async (
     }
 
     const barcodes = session.barcodes;
-    let header = 'Barcode';
+    let header = 'Seriali';
 
     header += '\n';
 

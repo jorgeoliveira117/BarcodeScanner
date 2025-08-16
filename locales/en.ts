@@ -71,9 +71,12 @@ export default {
   history: {
     title: 'Session History',
     exportSuccessTitle: 'Export Successful',
-    exportSuccessMessage: 'CSV file created at: ',
+    exportSuccessMessage:
+      'Files created:\n\nCSV: {{csvPath}}\n\nJSON: {{jsonPath}}',
+    exportShareCSV: 'Share CSV',
+    exportShareJSON: 'Share JSON',
     exportErrorTitle: 'Export Error',
-    exportErrorMessage: 'Failed to export CSV file.',
+    exportErrorMessage: 'Failed to export files.',
     deleteTitle: 'Delete Barcode',
     deleteMessage: 'Are you sure you want to delete this barcode?',
     photoModalTitle: 'Barcode Photo',

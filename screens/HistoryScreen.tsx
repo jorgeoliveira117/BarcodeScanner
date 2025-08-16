@@ -23,6 +23,7 @@ import {
   getBarcodesFromSession,
   removeBarcodeFromSession,
   exportSessionToCSV,
+  exportSessionToJSON,
   getSessionById,
   Session,
 } from '../utils/storage';
@@ -85,14 +86,23 @@ const HistoryScreen = ({ route, navigation }: any) => {
     if (!sessionId) return;
 
     try {
-      const csvPath = await exportSessionToCSV(sessionId);
+      // Export both CSV and JSON simultaneously
+      const [csvPath, jsonPath] = await Promise.all([
+        exportSessionToCSV(sessionId),
+        exportSessionToJSON(sessionId),
+      ]);
+
       Alert.alert(
         t('history.exportSuccessTitle'),
-        `${t('history.exportSuccessMessage')} ${csvPath}`,
+        t('history.exportSuccessMessage', { csvPath, jsonPath }),
         [
           {
-            text: t('alert.share'),
+            text: t('history.exportShareCSV'),
             onPress: () => Share.share({ url: `file://${csvPath}` }),
+          },
+          {
+            text: t('history.exportShareJSON'),
+            onPress: () => Share.share({ url: `file://${jsonPath}` }),
           },
           { text: t('alert.ok') },
         ],

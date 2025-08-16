@@ -75,9 +75,12 @@ export default {
   history: {
     title: 'Cronologia Sessione',
     exportSuccessTitle: 'Esportazione Riuscita',
-    exportSuccessMessage: 'File CSV creato in: ',
+    exportSuccessMessage:
+      'File creati:\n\nCSV: {{csvPath}}\n\nJSON: {{jsonPath}}',
+    exportShareCSV: 'Condividi CSV',
+    exportShareJSON: 'Condividi JSON',
     exportErrorTitle: 'Errore Esportazione',
-    exportErrorMessage: "Errore nell'esportazione del file CSV.",
+    exportErrorMessage: 'Impossibile esportare i file.',
     deleteTitle: 'Elimina Codice a Barre',
     deleteMessage: 'Sei sicuro di voler eliminare questo codice a barre?',
     photoModalTitle: 'Foto Codice a Barre',
