@@ -5,6 +5,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 
+import './utils/i18n';
+
 import HomeScreen from './screens/HomeScreen';
 import ScannerScreen from './screens/ScannerScreen';
 import HistoryScreen from './screens/HistoryScreen';
@@ -12,6 +14,7 @@ import SessionsListScreen from './screens/SessionsListScreen';
 import SessionFormScreen from './screens/SessionFormScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import { Session } from './utils/storage';
+import { useTranslation } from 'react-i18next';
 
 // Type definitions for navigation
 export type RootStackParamList = {
@@ -46,6 +49,8 @@ const theme = {
 };
 
 function App() {
+  const { t } = useTranslation();
+
   return (
     <PaperProvider theme={theme}>
       <StatusBar barStyle="light-content" backgroundColor="#050019" />
@@ -57,32 +62,32 @@ function App() {
           <Stack.Screen
             name="Home"
             component={HomeScreen}
-            options={{ title: 'Barcode Scanner' }}
+            options={{ title: t('home.title') }}
           />
           <Stack.Screen
             name="SessionsList"
             component={SessionsListScreen}
-            options={{ title: 'Sessions', headerShown: false }}
+            options={{ title: t('sessionList.title'), headerShown: false }}
           />
           <Stack.Screen
             name="SessionForm"
             component={SessionFormScreen}
-            options={{ title: 'Session', headerShown: false }}
+            options={{ title: t('sessionForm.title'), headerShown: false }}
           />
           <Stack.Screen
             name="Scanner"
             component={ScannerScreen}
-            options={{ title: 'Scan Barcode' }}
+            options={{ title: t('scanner.title') }}
           />
           <Stack.Screen
             name="History"
             component={HistoryScreen}
-            options={{ title: 'Session History', headerShown: false }}
+            options={{ title: t('history.title'), headerShown: false }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{ title: 'Settings', headerShown: false }}
+            options={{ title: t('settings.title'), headerShown: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>
