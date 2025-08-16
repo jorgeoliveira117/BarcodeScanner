@@ -1,3 +1,5 @@
+import { hi } from 'date-fns/locale';
+
 export default {
   home: {
     title: 'Barcode Scanner',
@@ -67,5 +69,30 @@ export default {
     storagePermissionLabel: 'Storage',
     permissionsButtonRequest: 'Request',
     permissionsButtonGranted: 'Granted',
+  },
+  history: {
+    title: 'Session History',
+    modal: {
+      share: 'Share',
+      ok: 'OK',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      close: 'Close',
+    },
+    exportSuccessTitle: 'Export Successful',
+    exportSuccessMessage: 'CSV file created at: ',
+    exportErrorTitle: 'Export Error',
+    exportErrorMessage: 'Failed to export CSV file.',
+    deleteTitle: 'Delete Barcode',
+    deleteMessage: 'Are you sure you want to delete this barcode?',
+    photoModalTitle: 'Barcode Photo',
+    photoModalMessage: 'Photo for: {{barcodeValue}}\n\nSaved at: {{photoPath}}',
+    loading: 'Loading session...',
+    progress: 'Progress: {{current}} / {{total}} barcodes',
+    searchPlaceholder: 'Search barcodes...',
+    searchResults: '{{count}} barcode(s) found',
+    searchNoResults: 'No barcodes match your search',
+    noBarcodesScanned: 'No barcodes scanned yet in this session',
+    startScanning: 'Start Scanning',
   },
 };

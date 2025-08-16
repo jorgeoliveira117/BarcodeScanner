@@ -27,6 +27,7 @@ import {
   Session,
 } from '../utils/storage';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface Barcode {
   id: string;
@@ -37,6 +38,7 @@ interface Barcode {
 }
 
 const HistoryScreen = ({ route, navigation }: any) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { sessionId } = route.params || {};
   const [session, setSession] = useState<Session | null>(null);
@@ -84,51 +86,54 @@ const HistoryScreen = ({ route, navigation }: any) => {
 
     try {
       const csvPath = await exportSessionToCSV(sessionId);
-      Alert.alert('Export Successful', `CSV file created at: ${csvPath}`, [
-        {
-          text: 'Share',
-          onPress: () => Share.share({ url: `file://${csvPath}` }),
-        },
-        { text: 'OK' },
-      ]);
+      Alert.alert(
+        t('history.exportSuccessTitle'),
+        `${t('history.exportSuccessMessage')} ${csvPath}`,
+        [
+          {
+            text: t('history.modal.share'),
+            onPress: () => Share.share({ url: `file://${csvPath}` }),
+          },
+          { text: t('history.modal.ok') },
+        ],
+      );
     } catch (error) {
-      Alert.alert('Export Failed', 'Failed to export CSV file');
+      Alert.alert(
+        t('history.exportErrorTitle'),
+        t('history.exportErrorMessage'),
+      );
       console.error('Export error:', error);
     }
   };
 
   const handleDeleteBarcode = (barcodeId: string) => {
-    Alert.alert(
-      'Delete Barcode',
-      'Are you sure you want to delete this barcode?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            if (sessionId) {
-              await removeBarcodeFromSession(sessionId, barcodeId);
-              loadSessionData();
-            }
-          },
+    Alert.alert(t('history.deleteTitle'), t('history.deleteMessage'), [
+      { text: t('history.modal.cancel'), style: 'cancel' },
+      {
+        text: t('history.modal.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          if (sessionId) {
+            await removeBarcodeFromSession(sessionId, barcodeId);
+            loadSessionData();
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const showPhotoModal = (photoPath?: string, barcodeValue?: string) => {
     if (!photoPath) return;
 
     Alert.alert(
-      'Barcode Photo',
-      `Photo for: ${barcodeValue}\n\nSaved at: ${photoPath}`,
+      t('history.photoModalTitle'),
+      t('history.photoModalMessage', { barcodeValue, photoPath }),
       [
         {
-          text: 'Share Photo',
+          text: t('history.modal.share'),
           onPress: () => Share.share({ url: `file://${photoPath}` }),
         },
-        { text: 'Close' },
+        { text: t('history.modal.close') },
       ],
     );
   };
@@ -168,7 +173,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   if (!session) {
     return (
       <View style={styles(theme).loadingContainer}>
-        <Text>Loading session...</Text>
+        <Text>{t('history.loading')}</Text>
       </View>
     );
   }
@@ -184,7 +189,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
           style={styles(theme).backButton}
         />
         <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          Session History
+          {t('history.title')}
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
@@ -195,12 +200,15 @@ const HistoryScreen = ({ route, navigation }: any) => {
           {session.location}
         </Text>
         <Text style={styles(theme).sessionProgress}>
-          Progress: {barcodes.length} / {session.expectedCodes} barcodes
+          {t('history.progress', {
+            current: barcodes.length,
+            total: session.expectedCodes,
+          })}
         </Text>
       </View>
 
       <Searchbar
-        placeholder="Search barcodes..."
+        placeholder={t('history.searchPlaceholder')}
         onChangeText={setSearchQuery}
         value={searchQuery}
         style={styles(theme).searchbar}
@@ -208,7 +216,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
 
       <View style={styles(theme).countContainer}>
         <Text style={styles(theme).countText}>
-          {filteredBarcodes.length} barcode(s) found
+          {t('history.searchResults', { count: filteredBarcodes.length })}
         </Text>
         <IconButton
           icon="export"
@@ -222,15 +230,15 @@ const HistoryScreen = ({ route, navigation }: any) => {
         <View style={styles(theme).emptyContainer}>
           <Text style={styles(theme).emptyText}>
             {barcodes.length === 0
-              ? 'No barcodes scanned yet in this session'
-              : 'No barcodes match your search'}
+              ? t('history.noBarcodesScanned')
+              : t('history.searchNoResults')}
           </Text>
           <Button
             mode="contained"
             onPress={() => navigation.navigate('Scanner', { sessionId })}
             style={styles(theme).scanButton}
           >
-            Start Scanning
+            {t('history.startScanning')}
           </Button>
         </View>
       ) : (
