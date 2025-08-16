@@ -28,6 +28,7 @@ import {
   GPSLocation,
 } from '../utils/storage';
 import { CodeType } from 'react-native-vision-camera';
+import { useTranslation } from 'react-i18next';
 
 interface SessionFormScreenProps {
   route: {
@@ -40,6 +41,7 @@ interface SessionFormScreenProps {
 }
 
 const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { session, mode } = route.params || { mode: 'create' };
   const isEditMode = mode === 'edit';
@@ -83,28 +85,28 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     };
 
     if (!name.trim()) {
-      newErrors.name = 'Session name is required';
+      newErrors.name = t('sessionForm.errors.name');
     }
 
     if (!location.trim()) {
-      newErrors.location = 'Location is required';
+      newErrors.location = t('sessionForm.errors.location');
     }
 
     const codesNum = parseInt(expectedCodes);
     if (!expectedCodes || isNaN(codesNum) || codesNum <= 0) {
-      newErrors.expectedCodes = 'Please enter a valid number of expected codes';
+      newErrors.expectedCodes = t('sessionForm.errors.expectedCodes');
     }
 
     if (expectedCodeTypes.length === 0) {
-      newErrors.expectedCodeTypes = 'Please select at least one barcode type';
+      newErrors.expectedCodeTypes = t('sessionForm.errors.expectedCodeTypes');
     }
 
     // Validate that codesToIgnore doesn't conflict with expectedCodeTypes
     const validation = validateSessionCodes(expectedCodeTypes, codesToIgnore);
     if (!validation.isValid) {
-      newErrors.codesToIgnore = `Cannot ignore expected code types: ${validation.conflicts.join(
-        ', ',
-      )}`;
+      newErrors.codesToIgnore = t('sessionForm.errors.codesToIgnore', {
+        conflicts: validation.conflicts.join(', '),
+      });
     }
 
     setErrors(newErrors);
@@ -118,12 +120,11 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
-            title: 'Location Permission',
-            message:
-              'This app needs access to location to set GPS coordinates for sessions',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            title: t('settings.locationPermission.title'),
+            message: t('settings.locationPermission.message'),
+            buttonNeutral: t('settings.locationPermission.askMeLater'),
+            buttonNegative: t('alert.cancel'),
+            buttonPositive: t('alert.ok'),
           },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
@@ -139,8 +140,8 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       Alert.alert(
-        'Permission Denied',
-        'Location permission is required to get GPS coordinates.',
+        t('settings.locationPermission.permissionDenied'),
+        t('settings.locationPermission.message'),
       );
       return;
     }
@@ -161,8 +162,8 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         setIsGettingLocation(false);
         console.error('Location error:', error);
         Alert.alert(
-          'Location Error',
-          'Failed to get current location. Please check your GPS settings and try again.',
+          t('settings.locationPermission.locationError'),
+          t('settings.locationPermission.locationErrorDescription'),
         );
       },
       {
@@ -175,15 +176,15 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
 
   const clearGpsLocation = () => {
     Alert.alert(
-      'Clear GPS Location',
-      'Are you sure you want to remove the GPS coordinates from this session?',
+      t('settings.locationPermission.clearLocation'),
+      t('settings.locationPermission.clearLocationDescription'),
       [
         {
-          text: 'Cancel',
+          text: t('alert.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Clear',
+          text: t('alert.clear'),
           style: 'destructive',
           onPress: () => {
             setGpsLocation(null);
@@ -214,11 +215,11 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         });
 
         Alert.alert(
-          'Session Updated',
-          `Session "${name}" has been updated successfully!`,
+          t('sessionForm.submit.updatedTitle'),
+          t('sessionForm.submit.updatedDescription', { name }),
           [
             {
-              text: 'OK',
+              text: t('alert.ok'),
               onPress: () => navigation.goBack(),
             },
           ],
@@ -237,16 +238,16 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         });
 
         Alert.alert(
-          'Session Created',
-          `Session "${newSession.name}" has been created successfully!`,
+          t('sessionForm.submit.createTitle'),
+          t('sessionForm.submit.createDescription', { name: newSession.name }),
           [
             {
-              text: 'Start Scanning',
+              text: t('sessionForm.submit.startScanning'),
               onPress: () =>
                 navigation.navigate('Scanner', { sessionId: newSession.id }),
             },
             {
-              text: 'Go to Sessions',
+              text: t('sessionForm.submit.goToSessions'),
               onPress: () => navigation.navigate('SessionsList'),
             },
           ],
@@ -254,10 +255,10 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
       }
     } catch (error) {
       Alert.alert(
-        'Error',
-        `Failed to ${
-          isEditMode ? 'update' : 'create'
-        } session. Please try again.`,
+        t('alert.error'),
+        isEditMode
+          ? t('sessionForm.submit.updateError')
+          : t('sessionForm.submit.createError'),
       );
       console.error(
         `Error ${isEditMode ? 'updating' : 'creating'} session:`,
@@ -300,7 +301,9 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           style={styles(theme).backButton}
         />
         <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          {isEditMode ? 'Edit Session' : 'Create New Session'}
+          {isEditMode
+            ? t('sessionForm.editTitle')
+            : t('sessionForm.createTitle')}
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
@@ -309,19 +312,25 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         {isEditMode && session && (
           <>
             <View style={styles(theme).readOnlyContainer}>
-              <Text style={styles(theme).readOnlyLabel}>Session ID:</Text>
+              <Text style={styles(theme).readOnlyLabel}>
+                {t('sessionForm.sessionId')}
+              </Text>
               <Text style={styles(theme).readOnlyValue}>{session.id}</Text>
             </View>
 
             <View style={styles(theme).readOnlyContainer}>
-              <Text style={styles(theme).readOnlyLabel}>Folder Name:</Text>
+              <Text style={styles(theme).readOnlyLabel}>
+                {t('sessionForm.folderName')}
+              </Text>
               <Text style={styles(theme).readOnlyValue}>
                 {session.folderName}
               </Text>
             </View>
 
             <View style={styles(theme).readOnlyContainer}>
-              <Text style={styles(theme).readOnlyLabel}>Barcodes Scanned:</Text>
+              <Text style={styles(theme).readOnlyLabel}>
+                {t('sessionForm.barcodesScanned')}
+              </Text>
               <Text style={styles(theme).readOnlyValue}>
                 {session.barcodes.length}
               </Text>
@@ -330,11 +339,11 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         )}
 
         <TextInput
-          label="Session Name *"
+          label={t('sessionForm.form.sessionName')}
           value={name}
           onChangeText={setName}
           mode="outlined"
-          placeholder="e.g., Warehouse Audit 2025"
+          placeholder={t('sessionForm.form.sessionNamePlaceholder')}
           error={!!errors.name}
           textColor="#F7F7FF"
         />
@@ -343,11 +352,11 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         </HelperText>
 
         <TextInput
-          label="Location *"
+          label={t('sessionForm.form.location')}
           value={location}
           onChangeText={setLocation}
           mode="outlined"
-          placeholder="e.g., Building A, Floor 2"
+          placeholder={t('sessionForm.form.locationPlaceholder')}
           error={!!errors.location}
           textColor="#F7F7FF"
         />
@@ -356,12 +365,12 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         </HelperText>
 
         <TextInput
-          label="Expected Number of Codes *"
+          label={t('sessionForm.form.expectedNumber')}
           value={expectedCodes}
           onChangeText={setExpectedCodes}
           mode="outlined"
           keyboardType="numeric"
-          placeholder="e.g., 100"
+          placeholder={t('sessionForm.form.expectedNumberPlaceholder')}
           error={!!errors.expectedCodes}
           textColor="#F7F7FF"
         />
@@ -369,7 +378,9 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           {errors.expectedCodes}
         </HelperText>
 
-        <Text style={styles(theme).sectionTitle}>Expected Barcode Types *</Text>
+        <Text style={styles(theme).sectionTitle}>
+          {t('sessionForm.form.expectedCodeTypes')}
+        </Text>
         <View style={styles(theme).chipsContainer}>
           {BARCODE_TYPES.map(type => (
             <Chip
@@ -396,11 +407,10 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         </HelperText>
 
         <Text style={styles(theme).sectionTitle}>
-          Codes to Ignore (Optional)
+          {t('sessionForm.form.codesToIgnore')}
         </Text>
         <Text style={styles(theme).sectionDescription}>
-          Select barcode types that should be ignored during scanning. These
-          cannot be the same as expected types.
+          {t('sessionForm.form.codesToIgnoreDescription')}
         </Text>
         <View style={styles(theme).chipsContainer}>
           {getAvailableIgnoreTypes().map(type => (
@@ -424,38 +434,44 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
         </View>
         {getAvailableIgnoreTypes().length === 0 && (
           <Text style={styles(theme).noIgnoreTypesText}>
-            All barcode types are set as expected. Change expected types above
-            to enable ignoring specific types.
+            {t('sessionForm.form.codesToIgnoreEmpty')}
           </Text>
         )}
         <HelperText type="error" visible={!!errors.codesToIgnore}>
           {errors.codesToIgnore}
         </HelperText>
 
-        <Text style={styles(theme).sectionTitle}>GPS Location (Optional)</Text>
+        <Text style={styles(theme).sectionTitle}>
+          {t('sessionForm.form.gps.label')}
+        </Text>
 
         <View style={styles(theme).gpsContainer}>
           {gpsLocation ? (
             <View style={styles(theme).gpsInfoContainer}>
               <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>Latitude:</Text>
+                <Text style={styles(theme).gpsLabel}>
+                  {t('sessionForm.form.gps.lat')}:
+                </Text>
                 <Text style={styles(theme).gpsValue}>
                   {gpsLocation.latitude.toFixed(6)}
                 </Text>
               </View>
               <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>Longitude:</Text>
+                <Text style={styles(theme).gpsLabel}>
+                  {t('sessionForm.form.gps.lon')}:
+                </Text>
                 <Text style={styles(theme).gpsValue}>
                   {gpsLocation.longitude.toFixed(6)}
                 </Text>
               </View>
               <Text style={styles(theme).gpsTimestamp}>
-                Updated on {new Date(gpsLocation.timestamp).toLocaleString()}
+                {t('sessionForm.form.gps.updated')}{' '}
+                {new Date(gpsLocation.timestamp).toLocaleString()}
               </Text>
             </View>
           ) : (
             <Text style={styles(theme).noGpsText}>
-              No GPS location set. Tap the button below to get current location.
+              {t('sessionForm.form.gps.none')}
             </Text>
           )}
           <View style={styles(theme).gpsButtonContainer}>
@@ -468,8 +484,8 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
               icon="crosshairs-gps"
             >
               {isGettingLocation
-                ? 'Getting Location...'
-                : 'Get Current Location'}
+                ? t('sessionForm.form.gps.gettingLocation')
+                : t('sessionForm.form.gps.getLocation')}
             </Button>
             {gpsLocation && (
               <Button
@@ -479,14 +495,16 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
                 textColor={theme.colors.error}
                 icon="delete"
               >
-                Clear Location
+                {t('sessionForm.form.gps.clearLocation')}
               </Button>
             )}
           </View>
         </View>
 
         <View style={styles(theme).switchContainer}>
-          <Text style={styles(theme).switchLabel}>Auto-save Pictures</Text>
+          <Text style={styles(theme).switchLabel}>
+            {t('sessionForm.form.savePictures')}
+          </Text>
           <Switch
             value={autosavePictures}
             onValueChange={setAutosavePictures}
@@ -499,7 +517,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
             onPress={() => navigation.goBack()}
             style={styles(theme).cancelButton}
           >
-            Cancel
+            {t('sessionForm.form.buttonCancel')}
           </Button>
           <Button
             mode="contained"
@@ -508,7 +526,9 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
             loading={isLoading}
             disabled={isLoading}
           >
-            {isEditMode ? 'Save Changes' : 'Create Session'}
+            {isEditMode
+              ? t('sessionForm.form.buttonSave')
+              : t('sessionForm.form.buttonCreate')}
           </Button>
         </View>
         <View style={styles(theme).bottomSpacing} />

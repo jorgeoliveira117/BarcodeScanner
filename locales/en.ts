@@ -1,5 +1,3 @@
-import { hi } from 'date-fns/locale';
-
 export default {
   home: {
     title: 'Barcode Scanner',
@@ -114,12 +112,78 @@ export default {
     noSessions: 'No sessions available',
     createSession: 'Create Your First Session',
   },
+  sessionForm: {
+    createTitle: 'Create New Session',
+    editTitle: 'Edit Session',
+    sessionId: 'Session ID',
+    folderName: 'Folder Name',
+    barcodesScanned: 'Barcodes Scanned',
+    form: {
+      sessionName: 'Session Name*',
+      sessionNamePlaceholder: 'e.g. Warehouse 4',
+      location: 'Location*',
+      locationPlaceholder: 'e.g. Building J, Floor 4',
+      expectedNumber: 'Expected Number of Barcodes*',
+      expectedNumberPlaceholder: 'e.g. 100',
+      expectedCodeTypes: 'Expected Barcode Types*',
+      codesToIgnore: 'Codes to Ignore (Optional)',
+      codesToIgnoreDescription:
+        'Select barcode types that should be ignored during scanning. These cannot be the same as expected types.',
+      codesToIgnoreEmpty:
+        'All barcode types are set as expected. Change expected types above to enable ignoring specific types.',
+      savePictures: 'Auto-save Pictures',
+      buttonCancel: 'Cancel',
+      buttonSave: 'Save Session',
+      buttonCreate: 'Create Session',
+      gps: {
+        label: 'GPS Location (Optional)',
+        lat: 'Latitude',
+        lon: 'Longitude',
+        updated: 'Updated on',
+        none: 'No GPS location set. Tap the button below to get current location.',
+        getLocation: 'Get Current Location',
+        gettingLocation: 'Getting Location...',
+        clearLocation: 'Clear Location',
+      },
+    },
+    errors: {
+      name: 'Session name is required',
+      location: 'Location is required',
+      expectedCodes: 'Please enter a valid number of expected codes',
+      expectedCodeTypes: 'Please select at least one barcode type',
+      codesToIgnore: 'Cannot ignore expected code types: {{conflicts}}',
+    },
+    locationPermission: {
+      title: 'Location Permission',
+      message:
+        'This app needs access to location to set the GPS coordinates for this session',
+      askMeLater: 'Ask Me Later',
+      permissionDenied: 'Permission Denied',
+      locationError: 'Location Error',
+      locationErrorDescription:
+        'Failed to get current location. Please check your GPS settings and try again.',
+      clearLocation: 'Clear GPS Location',
+      clearLocationDescription:
+        'Are you sure you want to remove the GPS coordinates from this session?',
+    },
+    submit: {
+      updatedTitle: 'Session Updated',
+      updatedDescription: 'Session {{name}} has been updated successfully!',
+      createTitle: 'Session Created',
+      createDescription: 'Session {{name}} has been created successfully!',
+      startScanning: 'Start Scanning',
+      goToSessions: 'Go to Sessions',
+      updateError: 'Failed to update session. Please try again.',
+      createError: 'Failed to create session. Please try again.',
+    },
+  },
   alert: {
-    share: 'Share',
-    ok: 'OK',
     cancel: 'Cancel',
-    delete: 'Delete',
+    clear: 'Clear',
     close: 'Close',
+    delete: 'Delete',
     error: 'Error',
+    ok: 'OK',
+    share: 'Share',
   },
 };
