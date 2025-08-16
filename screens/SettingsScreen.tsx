@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+  TouchableOpacity,
+} from 'react-native';
 import {
   Card,
   Title,
@@ -10,7 +17,6 @@ import {
   IconButton,
   useTheme,
   Menu,
-  TouchableRipple,
 } from 'react-native-paper';
 import Slider from '@react-native-community/slider';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -225,8 +231,22 @@ const SettingsScreen = ({ navigation }: any) => {
   };
 
   const handleLanguageChange = (languageValue: string) => {
+    console.log('Language change triggered:', languageValue);
     setLanguageMenuVisible(false);
-    handleSettingChange('language', languageValue);
+    // Add a small delay to ensure the menu closes before updating
+    setTimeout(() => {
+      handleSettingChange('language', languageValue);
+    }, 100);
+  };
+
+  const openLanguageMenu = () => {
+    console.log('Opening language menu');
+    setLanguageMenuVisible(true);
+  };
+
+  const closeLanguageMenu = () => {
+    console.log('Closing language menu');
+    setLanguageMenuVisible(false);
   };
 
   const handleGoBack = () => {
@@ -318,12 +338,13 @@ const SettingsScreen = ({ navigation }: any) => {
           </Text>
           <Menu
             visible={languageMenuVisible}
-            onDismiss={() => setLanguageMenuVisible(false)}
+            onDismiss={closeLanguageMenu}
             anchor={
-              <TouchableRipple
-                onPress={() => setLanguageMenuVisible(true)}
+              <TouchableOpacity
+                onPress={openLanguageMenu}
                 style={styles(theme).languageSelector}
-                rippleColor={theme.colors.primary}
+                activeOpacity={0.7}
+                disabled={languageMenuVisible}
               >
                 <View style={styles(theme).languageSelectorContent}>
                   <Text style={styles(theme).settingValue}>
@@ -336,7 +357,7 @@ const SettingsScreen = ({ navigation }: any) => {
                     style={styles(theme).dropdownIcon}
                   />
                 </View>
-              </TouchableRipple>
+              </TouchableOpacity>
             }
             contentStyle={styles(theme).menuContent}
           >
@@ -528,11 +549,12 @@ const styles = (theme: any) =>
     },
     languageSelector: {
       borderWidth: 1,
-      borderColor: theme.colors.outlineVariant,
+      borderColor: theme.colors.primary,
       borderRadius: 8,
       paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginTop: 12,
+      paddingVertical: 12,
+      marginTop: 8,
+      minHeight: 48,
     },
     languageSelectorContent: {
       flexDirection: 'row',
