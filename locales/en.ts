@@ -72,13 +72,6 @@ export default {
   },
   history: {
     title: 'Session History',
-    modal: {
-      share: 'Share',
-      ok: 'OK',
-      cancel: 'Cancel',
-      delete: 'Delete',
-      close: 'Close',
-    },
     exportSuccessTitle: 'Export Successful',
     exportSuccessMessage: 'CSV file created at: ',
     exportErrorTitle: 'Export Error',
@@ -94,5 +87,39 @@ export default {
     searchNoResults: 'No barcodes match your search',
     noBarcodesScanned: 'No barcodes scanned yet in this session',
     startScanning: 'Start Scanning',
+  },
+  sessionList: {
+    title: 'Session List',
+    deleteSessionTitle: 'Delete Session',
+    deleteSessionMessage:
+      'Are you sure you want to delete this session? All barcodes in this session will be lost.',
+    openMaps: {
+      noGPSTitle: 'No GPS Location',
+      noGPSMessage: 'This session does not have GPS coordinates set.',
+      openError:
+        'Could not open maps application. Please make sure you have Google Maps installed.',
+    },
+    session: {
+      barcodes: 'barcodes',
+      barcodesExpected: 'Expected:',
+      barcodesIgnored: 'Ignored:',
+      autoSave: 'Auto-save',
+      complete: 'Complete',
+      inProgress: 'In Progress',
+      resume: 'Resume',
+      viewHistory: 'View History',
+    },
+    sessionLabel: 'session',
+    sessionsLabel: 'sessions',
+    noSessions: 'No sessions available',
+    createSession: 'Create Your First Session',
+  },
+  alert: {
+    share: 'Share',
+    ok: 'OK',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    close: 'Close',
+    error: 'Error',
   },
 };

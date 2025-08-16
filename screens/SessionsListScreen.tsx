@@ -19,8 +19,10 @@ import {
   Icon,
 } from 'react-native-paper';
 import { getSessions, deleteSession, Session } from '../utils/storage';
+import { useTranslation } from 'react-i18next';
 
 const SessionsListScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [sessions, setSessions] = useState<Session[]>([]);
 
@@ -39,12 +41,12 @@ const SessionsListScreen = ({ navigation }: any) => {
 
   const handleDeleteSession = (sessionId: number) => {
     Alert.alert(
-      'Delete Session',
-      'Are you sure you want to delete this session? All barcodes in this session will be lost.',
+      t('sessionList.deleteSessionTitle'),
+      t('sessionList.deleteSessionMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('alert.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('alert.delete'),
           style: 'destructive',
           onPress: async () => {
             await deleteSession(sessionId);
@@ -74,8 +76,8 @@ const SessionsListScreen = ({ navigation }: any) => {
   const openGoogleMaps = async (session: Session) => {
     if (!session.gpsLocation) {
       Alert.alert(
-        'No GPS Location',
-        'This session does not have GPS coordinates set.',
+        t('sessionList.openMaps.noGPSTitle'),
+        t('sessionList.openMaps.noGPSMessage'),
       );
       return;
     }
@@ -102,10 +104,7 @@ const SessionsListScreen = ({ navigation }: any) => {
       }
     } catch (error) {
       console.error('Error opening maps:', error);
-      Alert.alert(
-        'Error',
-        'Could not open maps application. Please make sure you have Google Maps installed.',
-      );
+      Alert.alert(t('alert.error'), t('sessionList.openMaps.openError'));
     }
   };
 
@@ -145,16 +144,19 @@ const SessionsListScreen = ({ navigation }: any) => {
 
       <View style={styles(theme).statsContainer}>
         <Text style={styles(theme).statText}>
-          {item.barcodes.length} / {item.expectedCodes} barcodes
+          {item.barcodes.length} / {item.expectedCodes}{' '}
+          {t('sessionList.session.barcodes')}
         </Text>
         {item.expectedCodeTypes && item.expectedCodeTypes.length > 0 && (
           <Text style={styles(theme).statText}>
-            Expected: {item.expectedCodeTypes.join(', ').toUpperCase()}
+            {t('sessionList.session.barcodesExpected')}{' '}
+            {item.expectedCodeTypes.join(', ').toUpperCase()}
           </Text>
         )}
         {item.codesToIgnore && item.codesToIgnore.length > 0 && (
           <Text style={styles(theme).statText}>
-            Ignored: {item.codesToIgnore.join(', ').toUpperCase()}
+            {t('sessionList.session.barcodesIgnored')}{' '}
+            {item.codesToIgnore.join(', ').toUpperCase()}
           </Text>
         )}
       </View>
@@ -168,7 +170,9 @@ const SessionsListScreen = ({ navigation }: any) => {
           >
             <View style={styles(theme).chipContent}>
               <Icon source="camera" size={16} color={theme.colors.background} />
-              <Text style={styles(theme).chipText}>Auto-save</Text>
+              <Text style={styles(theme).chipText}>
+                {t('sessionList.session.autoSave')}
+              </Text>
             </View>
           </Chip>
         )}
@@ -184,7 +188,9 @@ const SessionsListScreen = ({ navigation }: any) => {
           {item.barcodes.length >= item.expectedCodes ? (
             <View style={styles(theme).chipContent}>
               <Icon source="check" size={16} color="#F7F7FF" />
-              <Text style={styles(theme).completeChipText}>Complete</Text>
+              <Text style={styles(theme).completeChipText}>
+                {t('sessionList.session.complete')}
+              </Text>
             </View>
           ) : (
             <View style={styles(theme).chipContent}>
@@ -193,7 +199,9 @@ const SessionsListScreen = ({ navigation }: any) => {
                 size={16}
                 color={theme.colors.background}
               />
-              <Text style={styles(theme).incompleteChipText}>In Progress</Text>
+              <Text style={styles(theme).incompleteChipText}>
+                {t('sessionList.session.inProgress')}
+              </Text>
             </View>
           )}
         </Chip>
@@ -206,7 +214,7 @@ const SessionsListScreen = ({ navigation }: any) => {
           style={styles(theme).actionButton}
           icon="play"
         >
-          Resume
+          {t('sessionList.session.resume')}
         </Button>
         <Button
           mode="outlined"
@@ -214,7 +222,7 @@ const SessionsListScreen = ({ navigation }: any) => {
           style={styles(theme).actionButton}
           icon="history"
         >
-          View History
+          {t('sessionList.session.viewHistory')}
         </Button>
       </View>
     </View>
@@ -231,18 +239,23 @@ const SessionsListScreen = ({ navigation }: any) => {
           style={styles(theme).backButton}
         />
         <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          Session List
+          {t('sessionList.title')}
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
       {sessions.length > 0 && (
         <Text style={styles(theme).countText}>
-          {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
+          {sessions.length}{' '}
+          {sessions.length === 1
+            ? t('sessionList.sessionLabel')
+            : t('sessionList.sessionsLabel')}
         </Text>
       )}
       {sessions.length === 0 ? (
         <View style={styles(theme).emptyContainer}>
-          <Text style={styles(theme).emptyText}>No sessions created yet</Text>
+          <Text style={styles(theme).emptyText}>
+            {t('sessionList.noSessions')}
+          </Text>
           <Button
             mode="contained"
             onPress={() =>
@@ -250,7 +263,7 @@ const SessionsListScreen = ({ navigation }: any) => {
             }
             style={styles(theme).createButton}
           >
-            Create Your First Session
+            {t('sessionList.createSession')}
           </Button>
         </View>
       ) : (

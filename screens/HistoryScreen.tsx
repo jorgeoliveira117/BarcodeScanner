@@ -91,10 +91,10 @@ const HistoryScreen = ({ route, navigation }: any) => {
         `${t('history.exportSuccessMessage')} ${csvPath}`,
         [
           {
-            text: t('history.modal.share'),
+            text: t('alert.share'),
             onPress: () => Share.share({ url: `file://${csvPath}` }),
           },
-          { text: t('history.modal.ok') },
+          { text: t('alert.ok') },
         ],
       );
     } catch (error) {
@@ -108,9 +108,9 @@ const HistoryScreen = ({ route, navigation }: any) => {
 
   const handleDeleteBarcode = (barcodeId: string) => {
     Alert.alert(t('history.deleteTitle'), t('history.deleteMessage'), [
-      { text: t('history.modal.cancel'), style: 'cancel' },
+      { text: t('alert.cancel'), style: 'cancel' },
       {
-        text: t('history.modal.delete'),
+        text: t('alert.delete'),
         style: 'destructive',
         onPress: async () => {
           if (sessionId) {
@@ -130,10 +130,10 @@ const HistoryScreen = ({ route, navigation }: any) => {
       t('history.photoModalMessage', { barcodeValue, photoPath }),
       [
         {
-          text: t('history.modal.share'),
+          text: t('alert.share'),
           onPress: () => Share.share({ url: `file://${photoPath}` }),
         },
-        { text: t('history.modal.close') },
+        { text: t('alert.close') },
       ],
     );
   };
