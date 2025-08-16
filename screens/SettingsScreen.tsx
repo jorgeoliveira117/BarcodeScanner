@@ -13,8 +13,10 @@ import {
 import Slider from '@react-native-community/slider';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { getSettings, updateSettings, AppSettings } from '../utils/settings';
+import { useTranslation } from 'react-i18next';
 
 const SettingsScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [settings, setSettings] = useState<AppSettings>({
     volume: 0.5,
@@ -74,18 +76,27 @@ const SettingsScreen = ({ navigation }: any) => {
       setCameraPermission(result);
 
       if (result === RESULTS.GRANTED) {
-        Alert.alert('Success', 'Camera permission granted!');
+        Alert.alert(
+          t('settings.cameraPermissionSuccessTitle'),
+          t('settings.cameraPermissionSuccessMessage'),
+        );
       } else if (result === RESULTS.DENIED) {
-        Alert.alert('Permission Denied', 'Camera permission was denied.');
+        Alert.alert(
+          t('settings.cameraPermissionDeniedTitle'),
+          t('settings.cameraPermissionDeniedMessage'),
+        );
       } else if (result === RESULTS.BLOCKED) {
         Alert.alert(
-          'Permission Blocked',
-          'Camera permission is blocked. Please enable it in your device settings.',
+          t('settings.cameraPermissionBlockedTitle'),
+          t('settings.cameraPermissionBlockedMessage'),
         );
       }
     } catch (error) {
       console.error('Error requesting camera permission:', error);
-      Alert.alert('Error', 'Failed to request camera permission.');
+      Alert.alert(
+        t('settings.cameraPermissionErrorTitle'),
+        t('settings.cameraPermissionErrorMessage'),
+      );
     }
   };
 
@@ -106,18 +117,27 @@ const SettingsScreen = ({ navigation }: any) => {
       setStoragePermission(result);
 
       if (result === RESULTS.GRANTED) {
-        Alert.alert('Success', 'Storage permission granted!');
+        Alert.alert(
+          t('settings.storagePermissionSuccessTitle'),
+          t('settings.storagePermissionSuccessMessage'),
+        );
       } else if (result === RESULTS.DENIED) {
-        Alert.alert('Permission Denied', 'Storage permission was denied.');
+        Alert.alert(
+          t('settings.storagePermissionDeniedTitle'),
+          t('settings.storagePermissionDeniedMessage'),
+        );
       } else if (result === RESULTS.BLOCKED) {
         Alert.alert(
-          'Permission Blocked',
-          'Storage permission is blocked. Please enable it in your device settings.',
+          t('settings.storagePermissionBlockedTitle'),
+          t('settings.storagePermissionBlockedMessage'),
         );
       }
     } catch (error) {
       console.error('Error requesting storage permission:', error);
-      Alert.alert('Error', 'Failed to request storage permission.');
+      Alert.alert(
+        t('settings.storagePermissionErrorTitle'),
+        t('settings.storagePermissionErrorMessage'),
+      );
     }
   };
 
@@ -128,7 +148,10 @@ const SettingsScreen = ({ navigation }: any) => {
       await updateSettings({ [key]: value });
     } catch (error) {
       console.error('Error updating setting:', error);
-      Alert.alert('Error', 'Failed to update setting.');
+      Alert.alert(
+        t('settings.settingChangeErrorTitle'),
+        t('settings.settingChangeErrorMessage'),
+      );
     }
   };
 
@@ -155,15 +178,15 @@ const SettingsScreen = ({ navigation }: any) => {
   const getPermissionStatusText = (status: string) => {
     switch (status) {
       case RESULTS.GRANTED:
-        return 'Granted';
+        return t('settings.permissions.granted');
       case RESULTS.DENIED:
-        return 'Denied';
+        return t('settings.permissions.denied');
       case RESULTS.BLOCKED:
-        return 'Blocked';
+        return t('settings.permissions.blocked');
       case RESULTS.UNAVAILABLE:
-        return 'Unavailable';
+        return t('settings.permissions.unavailable');
       default:
-        return 'Unknown';
+        return t('settings.permissions.unknown');
     }
   };
 
@@ -174,7 +197,7 @@ const SettingsScreen = ({ navigation }: any) => {
   if (loading) {
     return (
       <View style={styles(theme).loadingContainer}>
-        <Text>Loading settings...</Text>
+        <Text>{t('settings.loading')}</Text>
       </View>
     );
   }
@@ -190,7 +213,7 @@ const SettingsScreen = ({ navigation }: any) => {
           style={styles(theme).backButton}
         />
         <Text style={styles(theme).headerTitle} variant="headlineMedium">
-          Settings
+          {t('settings.title')}
         </Text>
         <View style={styles(theme).headerSpacer} />
       </View>
@@ -198,7 +221,7 @@ const SettingsScreen = ({ navigation }: any) => {
       <ScrollView>
         <View style={styles(theme).settingContainer}>
           <Text style={styles(theme).settingLabel}>
-            Volume&nbsp;
+            {t('settings.volumeLabel')}
             <Text style={styles(theme).settingValue}>
               {Math.round(settings.volume * 100)}%
             </Text>
@@ -216,7 +239,7 @@ const SettingsScreen = ({ navigation }: any) => {
         </View>
         <View style={styles(theme).settingContainer}>
           <Text style={styles(theme).settingLabel}>
-            Scan Cooldown&nbsp;
+            {t('settings.scanCooldownLabel')}
             <Text style={styles(theme).settingValue}>
               {formatCooldownDisplay(settings.scanCooldown)}
             </Text>
@@ -233,12 +256,14 @@ const SettingsScreen = ({ navigation }: any) => {
             thumbTintColor={theme.colors.primary}
           />
           <Text style={styles(theme).helpText}>
-            Time between consecutive scans (500ms - 10s)
+            {t('settings.scanCooldownDescription')}
           </Text>
         </View>
         <View style={styles(theme).settingContainer}>
           <View style={styles(theme).settingRow}>
-            <Text style={styles(theme).settingLabel}>Vibration</Text>
+            <Text style={styles(theme).settingLabel}>
+              {t('settings.vibrationLabel')}
+            </Text>
             <Switch
               value={settings.vibrationEnabled}
               onValueChange={value =>
@@ -250,15 +275,23 @@ const SettingsScreen = ({ navigation }: any) => {
         </View>
         <View style={styles(theme).settingContainer}>
           <View style={styles(theme).settingRow}>
-            <Text style={styles(theme).settingLabel}>Language</Text>
-            <Text style={styles(theme).settingValue}>English (Default)</Text>
+            <Text style={styles(theme).settingLabel}>
+              {t('settings.languageLabel')}
+            </Text>
+            <Text style={styles(theme).settingValue}>
+              {t(`settings.languageOptions.0.label`)}
+            </Text>
           </View>
         </View>
         <View style={styles(theme).settingContainer}>
-          <Text style={styles(theme).settingLabel}>Permissions</Text>
+          <Text style={styles(theme).settingLabel}>
+            {t('settings.permissionsLabel')}
+          </Text>
           <View style={styles(theme).permissionRow}>
             <View style={styles(theme).permissionInfo}>
-              <Text style={styles(theme).permissionLabel}>Camera</Text>
+              <Text style={styles(theme).permissionLabel}>
+                {t('settings.cameraPermissionLabel')}
+              </Text>
               <Text
                 style={[
                   styles(theme).permissionStatus,
@@ -274,7 +307,9 @@ const SettingsScreen = ({ navigation }: any) => {
               disabled={cameraPermission === RESULTS.GRANTED}
               style={styles(theme).permissionButton}
             >
-              {cameraPermission === RESULTS.GRANTED ? 'Granted' : 'Request'}
+              {cameraPermission === RESULTS.GRANTED
+                ? t('settings.permissionsButtonGranted')
+                : t('settings.permissionsButtonRequest')}
             </Button>
           </View>
 
@@ -282,7 +317,9 @@ const SettingsScreen = ({ navigation }: any) => {
 
           <View style={styles(theme).permissionRow}>
             <View style={styles(theme).permissionInfo}>
-              <Text style={styles(theme).permissionLabel}>Storage</Text>
+              <Text style={styles(theme).permissionLabel}>
+                {t('settings.storagePermissionLabel')}
+              </Text>
               <Text
                 style={[
                   styles(theme).permissionStatus,
@@ -298,7 +335,9 @@ const SettingsScreen = ({ navigation }: any) => {
               disabled={storagePermission === RESULTS.GRANTED}
               style={styles(theme).permissionButton}
             >
-              {storagePermission === RESULTS.GRANTED ? 'Granted' : 'Request'}
+              {storagePermission === RESULTS.GRANTED
+                ? t('settings.permissionsButtonGranted')
+                : t('settings.permissionsButtonRequest')}
             </Button>
           </View>
         </View>
