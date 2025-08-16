@@ -1,5 +1,3 @@
-import { ca } from 'date-fns/locale';
-
 export default {
   home: {
     title: 'Barcode Scanner',
