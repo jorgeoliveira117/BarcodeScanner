@@ -5,7 +5,6 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
-  Animated,
   Vibration,
 } from 'react-native';
 import {
@@ -16,7 +15,6 @@ import {
 import {
   Button,
   Text,
-  Card,
   Snackbar,
   useTheme,
   ProgressBar,
@@ -33,8 +31,10 @@ import { getSettings, AppSettings } from '../utils/settings';
 import { setActiveSession } from '../utils/activeSession';
 import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
+import { useTranslation } from 'react-i18next';
 
 const ScannerScreen = ({ route, navigation }: any) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { sessionId } = route.params || {};
   const [session, setSession] = useState<Session | null>(null);
@@ -86,11 +86,11 @@ const ScannerScreen = ({ route, navigation }: any) => {
     } else {
       // No session ID provided, redirect to sessions list
       Alert.alert(
-        'No Session Selected',
-        'Please select a session to start scanning.',
+        t('scanner.noSessionSelected.title'),
+        t('scanner.noSessionSelected.message'),
         [
           {
-            text: 'Go to Sessions',
+            text: t('scanner.noSessionSelected.goToSessions'),
             onPress: () => navigation.replace('SessionsList'),
           },
         ],
@@ -124,11 +124,11 @@ const ScannerScreen = ({ route, navigation }: any) => {
       setSession(sessionData);
     } else {
       Alert.alert(
-        'Session Not Found',
-        'The selected session could not be found.',
+        t('scanner.sessionNotFound.title'),
+        t('scanner.sessionNotFound.message'),
         [
           {
-            text: 'Go to Sessions',
+            text: t('scanner.sessionNotFound.goToSessions'),
             onPress: () => navigation.replace('SessionsList'),
           },
         ],
@@ -295,13 +295,22 @@ const ScannerScreen = ({ route, navigation }: any) => {
         photoPath: barcodeData.photoPath,
       });
 
+      const photoStatus = session?.autosavePictures
+        ? barcodeData.photoPath
+          ? ` ${t('scanner.scannedBarcode.photoSuccess')}`
+          : ` ${t('scanner.scannedBarcode.photoError')}`
+        : '';
+
       await loadSession();
-      showNotification('✅ Barcode added to session!', 'success');
+      showNotification(
+        `${t('scanner.addBarcodeAnyways.success')}${photoStatus}`,
+        'success',
+      );
       setPendingBarcode(null);
     } catch (error) {
       triggerFeedback(true);
       console.error('Error adding barcode to session:', error);
-      showNotification('❌ Failed to add barcode', 'error');
+      showNotification(t('scanner.addBarcodeAnyways.error'), 'error');
       setPendingBarcode(null);
       startScanCooldown();
     }
@@ -320,24 +329,27 @@ const ScannerScreen = ({ route, navigation }: any) => {
     const latestBarcode = session.barcodes[0]; // Most recent is first in array
 
     Alert.alert(
-      'Delete Barcode',
-      `Are you sure you want to delete this barcode?\n\nType: ${latestBarcode.type}\nValue: ${latestBarcode.value}`,
+      t('scanner.deleteBarcode.title'),
+      t('scanner.deleteBarcode.message', {
+        type: latestBarcode.type,
+        value: latestBarcode.value,
+      }),
       [
         {
-          text: 'Cancel',
+          text: t('alert.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Delete',
+          text: t('alert.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await removeBarcodeFromSession(sessionId, latestBarcode.id);
               await loadSession(); // Refresh session data
-              showNotification('🗑️ Barcode deleted successfully', 'success');
+              showNotification(t('scanner.deleteBarcode.success'), 'success');
             } catch (error) {
               console.error('Error deleting barcode:', error);
-              showNotification('❌ Failed to delete barcode', 'error');
+              showNotification(t('scanner.deleteBarcode.error'), 'error');
             }
           },
         },
@@ -396,12 +408,11 @@ const ScannerScreen = ({ route, navigation }: any) => {
         // If not, request permission
         console.log('Requesting new permission...');
         const granted = await PermissionsAndroid.request(permission, {
-          title: 'Storage Permission',
-          message:
-            'This app needs access to storage to save photos of scanned barcodes',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
+          title: t('scanner.permissions.storage.title'),
+          message: t('scanner.permissions.storage.message'),
+          buttonNeutral: t('scanner.permissions.storage.askMeLater'),
+          buttonNegative: t('alert.cancel'),
+          buttonPositive: t('alert.ok'),
         });
 
         console.log('Permission request result:', granted);
@@ -413,20 +424,23 @@ const ScannerScreen = ({ route, navigation }: any) => {
         // Show feedback to user
         if (hasPermission) {
           Alert.alert(
-            'Success',
-            'Photo saving enabled! Photos will now be saved when scanning barcodes.',
+            t('scanner.permissions.storage.successTitle'),
+            t('scanner.permissions.storage.successMessage'),
           );
         } else {
           Alert.alert(
-            'Permission Denied',
-            'Photos will not be saved. You can enable this later in app settings.',
+            t('scanner.permissions.storage.denyTitle'),
+            t('scanner.permissions.storage.denyMessage'),
           );
         }
 
         return hasPermission;
       } catch (err) {
         console.warn('Storage permission error:', err);
-        Alert.alert('Error', 'Failed to request storage permission');
+        Alert.alert(
+          t('scanner.permissions.storage.errorTitle'),
+          t('scanner.permissions.storage.errorMessage'),
+        );
         setHasStoragePermission(false);
         return false;
       }
@@ -565,17 +579,20 @@ const ScannerScreen = ({ route, navigation }: any) => {
           triggerFeedback(true);
 
           Alert.alert(
-            `⚠️ Duplicate barcode found!\nValue: ${barcodeValue}`,
-            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}`,
+            t('scanner.duplicateBarcode.title'),
+            t('scanner.duplicateBarcode.message', {
+              value: barcodeValue,
+              type: scannedCode.type,
+            }),
             [
               {
-                text: 'Add Anyways',
+                text: t('scanner.duplicateBarcode.addAnyways'),
                 onPress: () => {
                   addBarcodeAnyway(currentBarcodeData);
                 },
               },
               {
-                text: 'Ignore Code',
+                text: t('scanner.duplicateBarcode.ignore'),
                 onPress: () => ignorePendingBarcode(),
               },
             ],
@@ -593,17 +610,20 @@ const ScannerScreen = ({ route, navigation }: any) => {
           triggerFeedback(true);
 
           Alert.alert(
-            `⚠️ Unexpected barcode type: ${barcodeType}\nValue: ${barcodeValue}`,
-            `Type: ${scannedCode.type}\nValue: ${scannedCode.value}`,
+            t('scanner.unexpectedBarcode.title'),
+            t('scanner.unexpectedBarcode.message', {
+              type: scannedCode.type,
+              value: scannedCode.value,
+            }),
             [
               {
-                text: 'Add Anyways',
+                text: t('scanner.unexpectedBarcode.addAnyways'),
                 onPress: () => {
                   addBarcodeAnyway(currentBarcodeData);
                 },
               },
               {
-                text: 'Ignore Code',
+                text: t('scanner.unexpectedBarcode.ignore'),
                 onPress: () => ignorePendingBarcode(),
               },
             ],
@@ -628,21 +648,20 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
           const photoStatus = session.autosavePictures
             ? photoPath
-              ? ' 📷'
-              : ' ⚠️ Photo failed'
+              ? ` ${t('scanner.scannedBarcode.photoSuccess')}`
+              : ` ${t('scanner.scannedBarcode.photoError')}`
             : '';
 
           showNotification(
-            `✅ Barcode added! ${barcodeType}${photoStatus}`,
+            `${t(
+              'scanner.scannedBarcode.success',
+            )} ${barcodeType}${photoStatus}`,
             'success',
           );
         } catch (error) {
           console.error('Error saving barcode to session:', error);
           triggerFeedback(true);
-          showNotification(
-            '❌ Failed to save barcode. Please try again.',
-            'error',
-          );
+          showNotification(t('scanner.scannedBarcode.error'), 'error');
         }
       }
     },
@@ -662,13 +681,13 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
       if (cameraGranted && !storagePermission) {
         Alert.alert(
-          'Camera Ready',
-          "Camera permission granted! Storage permission was denied - you can scan barcodes but photos won't be saved.",
+          t('scanner.permissions.camera.grantedTitle'),
+          t('scanner.permissions.camera.grantedMessage'),
         );
       } else if (!cameraGranted) {
         Alert.alert(
-          'Camera Permission Required',
-          'Camera permission is required to scan barcodes.',
+          t('scanner.permissions.camera.deniedTitle'),
+          t('scanner.permissions.camera.deniedMessage'),
         );
       }
     } catch (error) {
@@ -680,25 +699,24 @@ const ScannerScreen = ({ route, navigation }: any) => {
     return (
       <View style={styles(theme).permissionContainer}>
         <Text style={styles(theme).permissionText}>
-          Camera permission is required to scan barcodes
+          {t('scanner.permissions.camera.requestTitle')}
         </Text>
         <Text style={styles(theme).permissionSubtext}>
-          Camera: Required for barcode scanning{'\n'}
-          Storage: Optional for saving photos
+          {t('scanner.permissions.camera.requestMessage')}
         </Text>
         <Button
           mode="contained"
           onPress={requestPermission}
           style={styles(theme).permissionButton}
         >
-          Grant Camera Permission
+          {t('scanner.permissions.camera.requestGrant')}
         </Button>
         <Button
           mode="outlined"
           onPress={() => navigation.goBack()}
           style={styles(theme).permissionButton}
         >
-          Go Back
+          {t('scanner.permissions.camera.goBack')}
         </Button>
       </View>
     );
@@ -707,9 +725,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
   if (!device) {
     return (
       <View style={styles(theme).container}>
-        <Text>No camera device found</Text>
+        <Text>{t('scanner.permissions.camera.noDevice')}</Text>
         <Button mode="contained" onPress={() => navigation.goBack()}>
-          Go Back
+          {t('scanner.permissions.camera.goBack')}
         </Button>
       </View>
     );
@@ -740,7 +758,8 @@ const ScannerScreen = ({ route, navigation }: any) => {
             <View style={styles(theme).row}>
               <Text style={styles(theme).sessionName}>{session.name}</Text>
               <Text style={styles(theme).sessionProgress}>
-                {session.barcodes.length} / {session.expectedCodes} barcodes
+                {session.barcodes.length} / {session.expectedCodes}{' '}
+                {t('scanner.barcodes')}
               </Text>
             </View>
           </View>
@@ -755,7 +774,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
             <View style={styles(theme).latestBarcodeContainer}>
               <View style={styles(theme).latestBarcodeHeader}>
                 <Text style={styles(theme).latestBarcodeTitle}>
-                  Latest Scan
+                  {t('scanner.latestScan')}
                 </Text>
                 <Button
                   mode="outlined"
@@ -766,7 +785,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
                   icon="delete"
                   compact
                 >
-                  Delete
+                  {t('scanner.delete')}
                 </Button>
               </View>
               <View style={styles(theme).latestBarcodeInfo}>
@@ -793,7 +812,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
               onPress={() => navigation.goBack()}
               style={styles(theme).backButton}
             >
-              Back
+              {t('scanner.back')}
             </Button>
             <Button
               mode="outlined"
@@ -801,7 +820,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
               style={styles(theme).historyButton}
               textColor="#fff"
             >
-              View History
+              {t('scanner.viewHistory')}
             </Button>
           </View>
         </View>

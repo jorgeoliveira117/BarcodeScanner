@@ -1,3 +1,5 @@
+import { ca } from 'date-fns/locale';
+
 export default {
   home: {
     title: 'Barcode Scanner',
@@ -175,6 +177,81 @@ export default {
       goToSessions: 'Go to Sessions',
       updateError: 'Failed to update session. Please try again.',
       createError: 'Failed to create session. Please try again.',
+    },
+  },
+  scanner: {
+    barcodes: 'barcodes',
+    latestScan: 'Latest Scan',
+    delete: 'Delete',
+    back: 'Back',
+    viewHistory: 'View History',
+    noSessionSelected: {
+      title: 'No Session Selected',
+      message: 'Please select a session to start scanning.',
+      goToSessions: 'Go to Sessions',
+    },
+    sessionNotFound: {
+      title: 'Session Not Found',
+      message: 'The selected session could not be found.',
+      goToSessions: 'Go to Sessions',
+    },
+    addBarcodeAnyways: {
+      success: '✅ Barcode added to session!',
+      error: '❌ Failed to add barcode to session.',
+    },
+    deleteBarcode: {
+      title: 'Delete Barcode',
+      message:
+        'Are you sure you want to delete this barcode?\n\nType: ${{type}}\nValue: ${value}',
+      success: '🗑️ Barcode deleted successfully',
+      error: '❌ Failed to delete barcode.',
+    },
+    permissions: {
+      storage: {
+        title: 'Storage Permission',
+        message:
+          'This app needs access to storage to save photos of scanned barcodes',
+        askMeLater: 'Ask Me Later',
+        successTitle: 'Success',
+        successMessage:
+          'Photo saving enabled! Photos will now be saved when scanning barcodes.',
+        denyTitle: 'Permission Denied',
+        denyMessage:
+          'Photos will not be saved. You can enable this later in app settings.',
+        errorTitle: 'Error',
+        errorMessage: 'Failed to request storage permission',
+      },
+      camera: {
+        grantedTitle: 'Camera Ready',
+        grantedMessage:
+          "Camera permission granted! Storage permission was denied - you can scan barcodes but photos won't be saved.",
+        deniedTitle: 'Camera Permission Required',
+        deniedMessage: 'Camera permission is required to scan barcodes.',
+        requestTitle: 'Camera permission is required to scan barcodes',
+        requestMessage:
+          'Camera: Required for barcode scanning\nStorage: Optional for saving photos',
+        requestGrant: 'Grant Camera Permission',
+        goBack: 'Go Back',
+        noDevice: 'No Camera Device Found',
+      },
+    },
+    duplicateBarcode: {
+      title: '⚠️ Duplicate barcode found!',
+      message: 'Type: {{type}}\nValue: {{value}}',
+      addAnyways: 'Add Anyways',
+      ignore: 'Ignore Code',
+    },
+    unexpectedBarcode: {
+      title: '⚠️ Unexpected barcode found!',
+      message: 'Type: {{type}}\nValue: {{value}}',
+      addAnyways: 'Add Anyways',
+      ignore: 'Ignore Code',
+    },
+    scannedBarcode: {
+      photoSuccess: ' 📸',
+      photoError: ' ⚠️ Photo failed',
+      success: '✅ Barcode added!',
+      error: '❌ Failed to save barcode. Please try again.',
     },
   },
   alert: {
