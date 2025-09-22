@@ -28,7 +28,7 @@ import {
   Session,
 } from '../utils/storage';
 import { getSettings, AppSettings } from '../utils/settings';
-import { setActiveSession } from '../utils/activeSession';
+import { setActiveSession, getActiveSessionId } from '../utils/activeSession';
 import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +36,10 @@ import { useTranslation } from 'react-i18next';
 const ScannerScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { sessionId } = route.params || {};
+  const { sessionId: routeSessionId } = route.params || {};
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
+    routeSessionId || null,
+  );
   const [session, setSession] = useState<Session | null>(null);
   const [settings, setSettings] = useState<AppSettings>({
     volume: 0.5,
@@ -76,27 +79,65 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    loadSettings();
-    initializeSounds();
+    const initializeSession = async () => {
+      loadSettings();
+      initializeSounds();
 
-    if (sessionId) {
-      loadSession();
-      // Set this session as the active session when entering
-      setActiveSession(sessionId);
-    } else {
-      // No session ID provided, redirect to sessions list
-      Alert.alert(
-        t('scanner.noSessionSelected.title'),
-        t('scanner.noSessionSelected.message'),
-        [
-          {
-            text: t('scanner.noSessionSelected.goToSessions'),
-            onPress: () => navigation.replace('SessionsList'),
-          },
-        ],
+      let sessionIdToUse = routeSessionId;
+      console.log(
+        '🎯 ScannerScreen mounted with route sessionId:',
+        routeSessionId,
       );
-    }
-  }, [sessionId]);
+
+      console.log(
+        'Session ID is ',
+        routeSessionId !== null && routeSessionId !== undefined
+          ? 'Valid'
+          : 'Null',
+      );
+      // If no sessionId in route params, check for active session
+      if (sessionIdToUse === null || sessionIdToUse === undefined) {
+        console.log(
+          '🔍 No sessionId in route params, checking for active session...',
+        );
+        const activeSessionId = await getActiveSessionId();
+        console.log('📋 Active session from storage:', activeSessionId);
+        sessionIdToUse = activeSessionId;
+      }
+
+      if (sessionIdToUse !== null && sessionIdToUse !== undefined) {
+        console.log('✅ Using sessionId:', sessionIdToUse);
+        setCurrentSessionId(sessionIdToUse);
+        // Load the session data
+        const sessionData = await getSessionById(sessionIdToUse);
+        if (sessionData) {
+          console.log('📄 Session data loaded:', sessionData.name);
+          console.log('🎯 Expected code types:', sessionData.expectedCodeTypes);
+          setSession(sessionData);
+        } else {
+          console.log('❌ Failed to load session data for ID:', sessionIdToUse);
+        }
+        // Set this session as the active session when entering
+        console.log('🔧 Setting active session to:', sessionIdToUse);
+        setActiveSession(sessionIdToUse);
+      } else {
+        // No session ID provided or found, redirect to sessions list
+        console.log('❌ No sessionId provided or found in storage');
+        Alert.alert(
+          t('scanner.noSessionSelected.title'),
+          t('scanner.noSessionSelected.message'),
+          [
+            {
+              text: t('scanner.noSessionSelected.goToSessions'),
+              onPress: () => navigation.replace('SessionsList'),
+            },
+          ],
+        );
+      }
+    };
+
+    initializeSession();
+  }, [routeSessionId]);
 
   const loadSettings = async () => {
     try {
@@ -117,9 +158,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
   }, []);
 
   const loadSession = async () => {
-    if (!sessionId) return;
+    if (!currentSessionId) return;
 
-    const sessionData = await getSessionById(sessionId);
+    const sessionData = await getSessionById(currentSessionId);
     if (sessionData) {
       setSession(sessionData);
     } else {
@@ -180,55 +221,39 @@ const ScannerScreen = ({ route, navigation }: any) => {
     // Enable playback in silence mode (iOS)
     Sound.setCategory('Playback');
 
-    // Load success sound (beep)
-    successSoundRef.current = new Sound(
-      'success.wav',
-      Sound.MAIN_BUNDLE,
-      error => {
-        if (error) {
-          console.log('Failed to load success sound', error);
-          // Fallback to system sound
-          successSoundRef.current = new Sound(
-            'beep.wav',
-            Sound.MAIN_BUNDLE,
-            fallbackError => {
-              if (fallbackError) {
-                console.log(
-                  'Failed to load fallback success sound',
-                  fallbackError,
-                );
-                successSoundRef.current = null;
-              }
-            },
-          );
-        }
-      },
-    );
+    // Try to load success sound, but don't fail if it doesn't exist
+    try {
+      successSoundRef.current = new Sound(
+        'success.wav',
+        Sound.MAIN_BUNDLE,
+        error => {
+          if (error) {
+            console.log('Success sound not found, using system default');
+            successSoundRef.current = null;
+          }
+        },
+      );
+    } catch (error) {
+      console.log('Failed to initialize success sound:', error);
+      successSoundRef.current = null;
+    }
 
-    // Load error sound
-    errorSoundRef.current = new Sound(
-      'error-sound.wav',
-      Sound.MAIN_BUNDLE,
-      error => {
-        if (error) {
-          console.log('Failed to load error sound', error);
-          // Fallback to system sound
-          errorSoundRef.current = new Sound(
-            'error.wav',
-            Sound.MAIN_BUNDLE,
-            fallbackError => {
-              if (fallbackError) {
-                console.log(
-                  'Failed to load fallback error sound',
-                  fallbackError,
-                );
-                errorSoundRef.current = null;
-              }
-            },
-          );
-        }
-      },
-    );
+    // Try to load error sound, but don't fail if it doesn't exist
+    try {
+      errorSoundRef.current = new Sound(
+        'error.wav',
+        Sound.MAIN_BUNDLE,
+        error => {
+          if (error) {
+            console.log('Error sound not found, using system default');
+            errorSoundRef.current = null;
+          }
+        },
+      );
+    } catch (error) {
+      console.log('Failed to initialize error sound:', error);
+      errorSoundRef.current = null;
+    }
   };
 
   const playSound = (isError = false) => {
@@ -282,13 +307,13 @@ const ScannerScreen = ({ route, navigation }: any) => {
   }) => {
     console.log('🔧 addBarcodeAnyway called');
     console.log('📋 pendingBarcode:', pendingBarcode);
-    if (!barcodeData || !sessionId) return;
+    if (!barcodeData || !currentSessionId) return;
 
     try {
       // Trigger haptic feedback for successful scan
       triggerFeedback();
 
-      await addBarcodeToSession(sessionId, {
+      await addBarcodeToSession(currentSessionId, {
         value: barcodeData.value,
         type: barcodeData.type as any,
         timestamp: new Date().toISOString(),
@@ -322,7 +347,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
   };
 
   const handleDeleteLatestBarcode = async () => {
-    if (!session || !sessionId || session.barcodes.length === 0) {
+    if (!session || !currentSessionId || session.barcodes.length === 0) {
       return;
     }
 
@@ -344,7 +369,10 @@ const ScannerScreen = ({ route, navigation }: any) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await removeBarcodeFromSession(sessionId, latestBarcode.id);
+              await removeBarcodeFromSession(
+                currentSessionId,
+                latestBarcode.id,
+              );
               await loadSession(); // Refresh session data
               showNotification(t('scanner.deleteBarcode.success'), 'success');
             } catch (error) {
@@ -537,18 +565,38 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const getActiveCodeTypes = () => {
     if (!session || !session.codesToIgnore) {
       // If no session, use all available types
+      console.log('🔄 Using all barcode types:', BARCODE_TYPES);
       return BARCODE_TYPES;
     }
 
-    return BARCODE_TYPES.filter(type => !session.codesToIgnore.includes(type));
+    const activeTypes = BARCODE_TYPES.filter(
+      type => !session.codesToIgnore.includes(type),
+    );
+    console.log('🎯 Using filtered barcode types:', activeTypes);
+    console.log('🚫 Ignoring types:', session.codesToIgnore);
+    return activeTypes;
   };
 
   const codeScanner = useCodeScanner({
     codeTypes: getActiveCodeTypes(),
     onCodeScanned: async codes => {
-      if (!isScanningActive || !session || !sessionId) return;
+      console.log('🔍 Code scanner triggered');
+      console.log('📊 Scanning active:', isScanningActive);
+      console.log('📋 Session:', session ? 'exists' : 'null');
+      console.log('🆔 Current session ID:', currentSessionId);
+
+      if (
+        !isScanningActive ||
+        !session ||
+        currentSessionId === null ||
+        currentSessionId === undefined
+      ) {
+        console.log('❌ Scanning blocked - one of the conditions failed');
+        return;
+      }
 
       if (codes.length > 0 && isScanningActive) {
+        console.log('✅ Code detected, processing...');
         const scannedCode = codes[0];
         setIsScanningActive(false);
 
@@ -636,7 +684,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
           // Trigger haptic feedback for successful scan
           triggerFeedback();
 
-          await addBarcodeToSession(sessionId, {
+          await addBarcodeToSession(currentSessionId, {
             value: barcodeValue,
             type: barcodeType as any,
             timestamp: new Date().toISOString(),
@@ -816,7 +864,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
             </Button>
             <Button
               mode="outlined"
-              onPress={() => navigation.navigate('History', { sessionId })}
+              onPress={() =>
+                navigation.navigate('History', { sessionId: currentSessionId })
+              }
               style={styles(theme).historyButton}
               textColor="#fff"
             >

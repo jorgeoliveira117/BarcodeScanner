@@ -16,6 +16,7 @@ export default {
     createSessionButton: 'Create Session',
     sessionsListButton: 'All Sessions',
     settingsButton: 'Settings',
+    exitButton: 'Exit App',
   },
   settings: {
     title: 'Settings',

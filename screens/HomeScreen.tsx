@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform, BackHandler } from 'react-native';
 import { Button, Text, useTheme, Icon } from 'react-native-paper';
 import { getSessions, Session, getSessionById } from '../utils/storage';
 import {
@@ -162,6 +162,20 @@ const HomeScreen = ({ navigation }: any) => {
           icon="cog"
         >
           {t('home.settingsButton')}
+        </Button>
+
+        <Button
+          mode="outlined"
+          onPress={() => {
+            // Exit the app
+            if (Platform.OS === 'android') {
+              BackHandler.exitApp();
+            }
+          }}
+          style={styles(theme).button}
+          icon="exit-to-app"
+        >
+          {t('home.exitButton')}
         </Button>
       </View>
     </View>

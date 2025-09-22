@@ -195,7 +195,9 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   };
 
   const handleSubmit = async () => {
+    console.log('Validating form...');
     if (!validateForm()) {
+      console.log('RIP');
       return;
     }
 
@@ -660,12 +662,13 @@ const styles = (theme: any) =>
     scrollContent: {
       flex: 1,
       padding: 16,
+      paddingBottom: 32,
     },
     scrollContentSpacer: {
       padding: 4,
     },
     bottomSpacing: {
-      height: 20,
+      height: 80,
     },
     // GPS Location styles
     gpsContainer: {

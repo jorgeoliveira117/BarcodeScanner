@@ -19,6 +19,7 @@ import {
   Icon,
 } from 'react-native-paper';
 import { getSessions, deleteSession, Session } from '../utils/storage';
+import { setActiveSession } from '../utils/activeSession';
 import { useTranslation } from 'react-i18next';
 
 const SessionsListScreen = ({ navigation }: any) => {
@@ -61,8 +62,19 @@ const SessionsListScreen = ({ navigation }: any) => {
     navigation.goBack();
   };
 
-  const handleResumeSession = (session: Session) => {
-    navigation.navigate('Scanner', { sessionId: session.id });
+  const handleResumeSession = async (session: Session) => {
+    console.log('🎯 Resuming session:', session.id);
+    try {
+      // Set the active session immediately
+      await setActiveSession(session.id);
+      console.log('✅ Active session set successfully');
+      // Navigate to scanner with session ID
+      navigation.navigate('Scanner', { sessionId: session.id });
+    } catch (error) {
+      console.error('❌ Error setting active session:', error);
+      // Still navigate, let the scanner handle it
+      navigation.navigate('Scanner', { sessionId: session.id });
+    }
   };
 
   const handleViewHistory = (session: Session) => {

@@ -48,7 +48,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId !== null && sessionId !== undefined) {
       loadSessionData();
     } else {
       // If no sessionId provided, redirect to sessions list
@@ -67,7 +67,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   }, [searchQuery, barcodes]);
 
   const loadSessionData = async () => {
-    if (!sessionId) return;
+    if (sessionId === null || sessionId === undefined) return;
 
     const sessionData = await getSessionById(sessionId);
     setSession(sessionData);
@@ -83,7 +83,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   };
 
   const handleExport = async () => {
-    if (!sessionId) return;
+    if (sessionId === null || sessionId === undefined) return;
 
     try {
       // Export both CSV and JSON simultaneously
@@ -123,7 +123,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
         text: t('alert.delete'),
         style: 'destructive',
         onPress: async () => {
-          if (sessionId) {
+          if (sessionId !== null && sessionId !== undefined) {
             await removeBarcodeFromSession(sessionId, barcodeId);
             loadSessionData();
           }

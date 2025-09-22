@@ -16,6 +16,7 @@ export default {
     createSessionButton: 'Crea Sessione',
     sessionsListButton: 'Tutte le Sessioni',
     settingsButton: 'Impostazioni',
+    exitButton: 'Esci App',
   },
   settings: {
     title: 'Impostazioni',
@@ -31,7 +32,8 @@ export default {
     cameraPermissionErrorMessage:
       'Errore nel richiedere il permesso della fotocamera.',
     storagePermissionSuccessTitle: 'Esito positivo',
-    storagePermissionSuccessMessage: 'Permesso di accesso alla archiviazione concesso!',
+    storagePermissionSuccessMessage:
+      'Permesso di accesso alla archiviazione concesso!',
     storagePermissionDeniedTitle: 'Permesso Negato',
     storagePermissionDeniedMessage:
       'Il permesso di archiviazione è stato negato.',
@@ -104,7 +106,7 @@ export default {
       noGPSTitle: 'Nessuna Posizione GPS',
       noGPSMessage: 'Questa sessione non ha coordinate GPS impostate.',
       openError:
-        "Impossibile aprire Maps. Assicurati di avere Google Maps installato.",
+        'Impossibile aprire Maps. Assicurati di avere Google Maps installato.',
     },
     session: {
       barcodes: 'codici seriali',
@@ -139,7 +141,7 @@ export default {
       codesToIgnoreDescription:
         'Seleziona i tipi di seriali che dovrebbero essere ignorati durante la scansione. Questi non possono essere gli stessi di quelli previsti.',
       codesToIgnoreEmpty:
-        "Tutti i tipi di seriali sono impostati come previsti. Rimuovi i tipi non previsti sopra per poterli ignorare.",
+        'Tutti i tipi di seriali sono impostati come previsti. Rimuovi i tipi non previsti sopra per poterli ignorare.',
       savePictures: 'Salvataggio Automatico Foto',
       buttonCancel: 'Annulla',
       buttonSave: 'Salva Sessione',
