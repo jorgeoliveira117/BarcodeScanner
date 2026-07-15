@@ -31,6 +31,8 @@ import { requestStoragePermission } from '../utils/permissions';
 import { CodeType } from 'react-native-vision-camera';
 import { useTranslation } from 'react-i18next';
 
+const DEFAULT_EXPECTED_CODE_TYPES: CodeType[] = ['code-128', 'data-matrix'];
+
 interface SessionFormScreenProps {
   route: {
     params?: {
@@ -59,7 +61,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     session?.expectedCodes?.toString() || '',
   );
   const [expectedCodeTypes, setExpectedCodeTypes] = useState<CodeType[]>(
-    session?.expectedCodeTypes || [],
+    session?.expectedCodeTypes || DEFAULT_EXPECTED_CODE_TYPES,
   );
   const [codesToIgnore, setCodesToIgnore] = useState<CodeType[]>(
     session?.codesToIgnore || [],
