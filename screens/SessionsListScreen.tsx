@@ -16,12 +16,19 @@ import {
   useTheme,
   Icon,
 } from 'react-native-paper';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Session } from '../utils/storage';
 import { setActiveSession } from '../utils/activeSession';
 import { useTranslation } from 'react-i18next';
 import { useSessions } from '../hooks/useSessions';
+import { RootStackParamList } from '../navigation/types';
 
-const SessionsListScreen = ({ navigation }: any) => {
+type SessionsListScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'SessionsList'
+>;
+
+const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { sessions, loadSessions, deleteAndRefreshSession } = useSessions();

@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Platform,
-  PermissionsAndroid,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import {
   Button,
   TextInput,
@@ -18,20 +11,10 @@ import {
   useTheme,
   IconButton,
 } from 'react-native-paper';
-import Geolocation from '@react-native-community/geolocation';
-import {
-  BARCODE_TYPES,
-  createSession,
-  modifySession,
-  Session,
-  validateSessionCodes,
-  GPSLocation,
-} from '../utils/storage';
-import { requestStoragePermission } from '../utils/permissions';
+import { BARCODE_TYPES, Session } from '../utils/storage';
 import { CodeType } from 'react-native-vision-camera';
 import { useTranslation } from 'react-i18next';
-
-const DEFAULT_EXPECTED_CODE_TYPES: CodeType[] = ['code-128', 'data-matrix'];
+import { useSessionForm } from '../hooks/useSessionForm';
 
 interface SessionFormScreenProps {
   route: {
@@ -50,291 +33,37 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   const isEditMode = mode === 'edit';
   const showIgnoreCodesSection = false;
 
-  // Initialize form values based on mode
-  const [name, setName] = useState(session?.name || '');
-  const [location, setLocation] = useState(session?.location || '');
-  const [gpsLocation, setGpsLocation] = useState<GPSLocation | null>(
-    session?.gpsLocation || null,
-  );
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [expectedCodes, setExpectedCodes] = useState(
-    session?.expectedCodes?.toString() || '',
-  );
-  const [expectedCodeTypes, setExpectedCodeTypes] = useState<CodeType[]>(
-    session?.expectedCodeTypes || DEFAULT_EXPECTED_CODE_TYPES,
-  );
-  const [codesToIgnore, setCodesToIgnore] = useState<CodeType[]>(
-    session?.codesToIgnore || [],
-  );
-  const [autosavePictures, setAutosavePictures] = useState(
-    session?.autosavePictures ?? true,
-  );
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [errors, setErrors] = useState({
-    name: '',
-    location: '',
-    expectedCodes: '',
-    expectedCodeTypes: '',
-    codesToIgnore: '',
+  const {
+    name,
+    setName,
+    location,
+    setLocation,
+    gpsLocation,
+    isGettingLocation,
+    expectedCodes,
+    setExpectedCodes,
+    expectedCodeTypes,
+    codesToIgnore,
+    autosavePictures,
+    setAutosavePictures,
+    isLoading,
+    errors,
+    getCurrentLocation,
+    clearGpsLocation,
+    handleSubmit,
+    toggleCodeType,
+    toggleIgnoreCodeType,
+    getAvailableIgnoreTypes,
+  } = useSessionForm({
+    session,
+    isEditMode,
+    showIgnoreCodesSection,
+    navigation,
+    t,
   });
-
-  const effectiveCodesToIgnore = showIgnoreCodesSection ? codesToIgnore : [];
-
-  const validateForm = () => {
-    const newErrors = {
-      name: '',
-      location: '',
-      expectedCodes: '',
-      expectedCodeTypes: '',
-      codesToIgnore: '',
-    };
-
-    if (!name.trim()) {
-      newErrors.name = t('sessionForm.errors.name');
-    }
-
-    if (!location.trim()) {
-      newErrors.location = t('sessionForm.errors.location');
-    }
-
-    const codesNum = parseInt(expectedCodes);
-    if (!expectedCodes || isNaN(codesNum) || codesNum <= 0) {
-      newErrors.expectedCodes = t('sessionForm.errors.expectedCodes');
-    }
-
-    if (expectedCodeTypes.length === 0) {
-      newErrors.expectedCodeTypes = t('sessionForm.errors.expectedCodeTypes');
-    }
-
-    // Validate that codesToIgnore doesn't conflict with expectedCodeTypes
-    const validation = validateSessionCodes(
-      expectedCodeTypes,
-      effectiveCodesToIgnore,
-    );
-    if (!validation.isValid) {
-      newErrors.codesToIgnore = t('sessionForm.errors.codesToIgnore', {
-        conflicts: validation.conflicts.join(', '),
-      });
-    }
-
-    setErrors(newErrors);
-
-    return Object.values(newErrors).every(error => error === '');
-  };
-
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: t('settings.locationPermission.title'),
-            message: t('settings.locationPermission.message'),
-            buttonNeutral: t('settings.locationPermission.askMeLater'),
-            buttonNegative: t('alert.cancel'),
-            buttonPositive: t('alert.ok'),
-          },
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn('Location permission error:', err);
-        return false;
-      }
-    }
-    return true; // iOS handles permissions through Info.plist
-  };
-
-  const ensureStoragePermission = async () => {
-    return requestStoragePermission(
-      {
-        title: t('scanner.permissions.storage.title'),
-        message: t('scanner.permissions.storage.message'),
-        askMeLater: t('scanner.permissions.storage.askMeLater'),
-        cancel: t('alert.cancel'),
-        ok: t('alert.ok'),
-        denyTitle: t('scanner.permissions.storage.denyTitle'),
-        denyMessage: t('scanner.permissions.storage.denyMessage'),
-        errorTitle: t('scanner.permissions.storage.errorTitle'),
-        errorMessage: t('scanner.permissions.storage.errorMessage'),
-      },
-      {
-        showDeniedAlert: true,
-        showErrorAlert: true,
-        showSuccessAlert: false,
-      },
-    );
-  };
-
-  useEffect(() => {
-    const syncAutosavePermission = async () => {
-      if (!autosavePictures) {
-        return;
-      }
-
-      const hasPermission = await ensureStoragePermission();
-      if (!hasPermission) {
-        setAutosavePictures(false);
-      }
-    };
-
-    syncAutosavePermission();
-  }, [autosavePictures]);
-
-  const getCurrentLocation = async () => {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        t('settings.locationPermission.permissionDenied'),
-        t('settings.locationPermission.message'),
-      );
-      return;
-    }
-
-    setIsGettingLocation(true);
-
-    Geolocation.getCurrentPosition(
-      (position: any) => {
-        const newGpsLocation: GPSLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          timestamp: new Date().toISOString(),
-        };
-        setGpsLocation(newGpsLocation);
-        setIsGettingLocation(false);
-      },
-      (error: any) => {
-        setIsGettingLocation(false);
-        console.error('Location error:', error);
-        Alert.alert(
-          t('settings.locationPermission.locationError'),
-          t('settings.locationPermission.locationErrorDescription'),
-        );
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000,
-      },
-    );
-  };
-
-  const clearGpsLocation = () => {
-    Alert.alert(
-      t('settings.locationPermission.clearLocation'),
-      t('settings.locationPermission.clearLocationDescription'),
-      [
-        {
-          text: t('alert.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('alert.clear'),
-          style: 'destructive',
-          onPress: () => {
-            setGpsLocation(null);
-          },
-        },
-      ],
-    );
-  };
-
-  const handleSubmit = async () => {
-    console.log('Validating form...');
-    if (!validateForm()) {
-      console.log('RIP');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      if (isEditMode && session) {
-        // Edit existing session
-        await modifySession(session.id, {
-          name: name.trim(),
-          location: location.trim(),
-          gpsLocation: gpsLocation || undefined,
-          expectedCodeTypes,
-          codesToIgnore: effectiveCodesToIgnore,
-          expectedCodes: parseInt(expectedCodes),
-          autosavePictures,
-        });
-
-        Alert.alert(
-          t('sessionForm.submit.updatedTitle'),
-          t('sessionForm.submit.updatedDescription', { name }),
-          [
-            {
-              text: t('alert.ok'),
-              onPress: () => navigation.goBack(),
-            },
-          ],
-        );
-      } else {
-        // Create new session
-        const newSession = await createSession({
-          name: name.trim(),
-          folderName: '', // This will be auto-generated
-          location: location.trim(),
-          gpsLocation: gpsLocation || undefined,
-          expectedCodeTypes,
-          codesToIgnore: effectiveCodesToIgnore,
-          expectedCodes: parseInt(expectedCodes),
-          autosavePictures,
-        });
-
-        Alert.alert(
-          t('sessionForm.submit.createTitle'),
-          t('sessionForm.submit.createDescription', { name: newSession.name }),
-          [
-            {
-              text: t('sessionForm.submit.startScanning'),
-              onPress: () =>
-                navigation.navigate('Scanner', { sessionId: newSession.id }),
-            },
-            {
-              text: t('sessionForm.submit.goToSessions'),
-              onPress: () => navigation.navigate('SessionsList'),
-            },
-          ],
-        );
-      }
-    } catch (error) {
-      Alert.alert(
-        t('alert.error'),
-        isEditMode
-          ? t('sessionForm.submit.updateError')
-          : t('sessionForm.submit.createError'),
-      );
-      console.error(
-        `Error ${isEditMode ? 'updating' : 'creating'} session:`,
-        error,
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleCodeType = (type: CodeType) => {
-    setExpectedCodeTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
-    );
-  };
-
-  const toggleIgnoreCodeType = (type: CodeType) => {
-    setCodesToIgnore(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
-    );
-  };
 
   const handleGoBack = () => {
     navigation.goBack();
-  };
-
-  // Get available code types that can be ignored (exclude expected types)
-  const getAvailableIgnoreTypes = () => {
-    return BARCODE_TYPES.filter(type => !expectedCodeTypes.includes(type));
   };
 
   return (

@@ -22,10 +22,8 @@ import { useSession } from '../hooks/useSession';
 import { useNotification } from '../hooks/useNotification';
 import { useAudioHaptics } from '../hooks/useAudioHaptics';
 import { useScannerBarcodeProcessor } from '../hooks/useScannerBarcodeProcessor';
-import {
-  usePhotoCapture,
-  useScannerPermissions,
-} from '../hooks/usePhotoCapture';
+import { usePhotoCapture } from '../hooks/usePhotoCapture';
+import { usePermissions } from '../hooks/usePermissions';
 
 const sanitizeFileNamePart = (value: string): string => {
   return value
@@ -182,7 +180,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
     setHasCameraPermission,
     setHasStoragePermission,
     checkCameraAndStoragePermissions,
-  } = useScannerPermissions({ requestStoragePermission });
+  } = usePermissions({ requestStoragePermission });
   const { capturePhoto } = usePhotoCapture({
     cameraRef,
     hasStoragePermission,
