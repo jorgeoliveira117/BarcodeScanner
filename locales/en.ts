@@ -239,7 +239,8 @@ export default {
     },
     duplicateBarcode: {
       title: '⚠️ Duplicate barcode found!',
-      message: 'Type: {{type}}\nValue: {{value}}',
+      message:
+        'Type: {{type}}\nValue: {{value}}\n\nThis was the {{position}} barcode scanned in this session.',
       addAnyways: 'Add Anyways',
       ignore: 'Ignore Code',
     },

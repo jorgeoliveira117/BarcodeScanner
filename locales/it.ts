@@ -251,7 +251,8 @@ export default {
     },
     duplicateBarcode: {
       title: '⚠️ Codice seriale duplicato trovato!',
-      message: 'Tipo: {{type}}\nValore: {{value}}',
+      message:
+        'Tipo: {{type}}\nValore: {{value}}\n\nQuesto era il codice seriale #{{position}} scansionato in questa sessione.',
       addAnyways: 'Aggiungi Comunque',
       ignore: 'Ignora Codice',
     },

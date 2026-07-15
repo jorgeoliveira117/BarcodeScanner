@@ -33,8 +33,22 @@ import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
 
+const getOrdinalNumber = (num: number): string => {
+  const suffix = ['th', 'st', 'nd', 'rd'];
+  const v = num % 100;
+  return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+};
+
+const sanitizeFileNamePart = (value: string): string => {
+  return value
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
 const ScannerScreen = ({ route, navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { sessionId: routeSessionId } = route.params || {};
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
@@ -156,6 +170,19 @@ const ScannerScreen = ({ route, navigation }: any) => {
       }
     };
   }, []);
+
+  // Debug effect to track session updates
+  useEffect(() => {
+    if (session) {
+      console.log(
+        '📊 Session updated, barcode count:',
+        session.barcodes.length,
+      );
+      if (session.barcodes.length > 0) {
+        console.log('🔍 Latest barcode:', session.barcodes[0].value);
+      }
+    }
+  }, [session]);
 
   const loadSession = async () => {
     if (!currentSessionId) return;
@@ -295,9 +322,24 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const checkForDuplicateBarcode = (value: string): boolean => {
-    if (!session) return false;
-    return session.barcodes.some(barcode => barcode.value === value);
+  const checkForDuplicateBarcode = async (
+    value: string,
+  ): Promise<{ isDuplicate: boolean; position?: number }> => {
+    if (!currentSessionId) return { isDuplicate: false };
+
+    // Fetch the current session data from storage to ensure we have the latest barcodes
+    const currentSession = await getSessionById(currentSessionId);
+    if (!currentSession) return { isDuplicate: false };
+
+    const duplicateIndex = currentSession.barcodes.findIndex(
+      barcode => barcode.value === value,
+    );
+    if (duplicateIndex !== -1) {
+      // Position is 1-based, and barcodes array has newest first, so position = index + 1
+      return { isDuplicate: true, position: duplicateIndex + 1 };
+    }
+
+    return { isDuplicate: false };
   };
 
   const addBarcodeAnyway = async (barcodeData?: {
@@ -320,13 +362,16 @@ const ScannerScreen = ({ route, navigation }: any) => {
         photoPath: barcodeData.photoPath,
       });
 
-      const photoStatus = session?.autosavePictures
+      await loadSession();
+
+      // Get the updated session data for photo status message
+      const updatedSession = await getSessionById(currentSessionId);
+      const photoStatus = updatedSession?.autosavePictures
         ? barcodeData.photoPath
           ? ` ${t('scanner.scannedBarcode.photoSuccess')}`
           : ` ${t('scanner.scannedBarcode.photoError')}`
         : '';
 
-      await loadSession();
       showNotification(
         `${t('scanner.addBarcodeAnyways.success')}${photoStatus}`,
         'success',
@@ -508,15 +553,16 @@ const ScannerScreen = ({ route, navigation }: any) => {
     checkPermissions();
   }, []);
 
-  const capturePhoto = async () => {
+  const capturePhoto = async (namePart: string = 'barcode') => {
     try {
       if (cameraRef.current) {
         // Take the photo
         const photo = await cameraRef.current.takePhoto();
 
-        // Create a unique filename
+        // Create a unique filename using the provided base name
         const timestamp = new Date().getTime();
-        const filename = `barcode_${timestamp}.jpg`;
+        const safeNamePart = sanitizeFileNamePart(namePart) || 'barcode';
+        const filename = `${safeNamePart}_${timestamp}.jpg`;
 
         let destPath;
         if (hasStoragePermission && Platform.OS === 'android') {
@@ -562,6 +608,23 @@ const ScannerScreen = ({ route, navigation }: any) => {
     return null;
   };
 
+  const handleManualPhotoCapture = async () => {
+    const lastScannedBarcode = session?.barcodes?.[0]?.value;
+
+    if (!lastScannedBarcode) {
+      Alert.alert(t('alert.error'), 'No scanned barcode found yet.');
+      return;
+    }
+
+    const manualPhotoPath = await capturePhoto(`${lastScannedBarcode}_back`);
+
+    if (manualPhotoPath) {
+      showNotification('Back photo saved successfully', 'success');
+    } else {
+      showNotification('Failed to save back photo', 'error');
+    }
+  };
+
   const getActiveCodeTypes = () => {
     if (!session || !session.codesToIgnore) {
       // If no session, use all available types
@@ -604,21 +667,29 @@ const ScannerScreen = ({ route, navigation }: any) => {
         const barcodeType = scannedCode.type || 'unknown';
 
         // Check for duplicate barcode
-        const isDuplicate = checkForDuplicateBarcode(barcodeValue);
+        const duplicateResult = await checkForDuplicateBarcode(barcodeValue);
+
+        // Get current session data to ensure we have the latest settings
+        const currentSession = await getSessionById(currentSessionId);
+        if (!currentSession) {
+          console.log('❌ Failed to get current session data');
+          startScanCooldown();
+          return;
+        }
 
         // Check if the scanned barcode type is expected for this session
         const isExpectedType =
           barcodeType !== 'unknown' &&
-          session.expectedCodeTypes.includes(barcodeType);
+          currentSession.expectedCodeTypes.includes(barcodeType);
 
         // Capture photo when barcode is detected (if auto-save is enabled)
         let photoPath = null;
-        if (session.autosavePictures) {
-          photoPath = await capturePhoto();
+        if (currentSession.autosavePictures) {
+          photoPath = await capturePhoto(barcodeValue);
         }
 
         // Handle duplicate barcodes
-        if (isDuplicate) {
+        if (duplicateResult.isDuplicate) {
           const currentBarcodeData = {
             value: barcodeValue,
             type: barcodeType,
@@ -631,6 +702,10 @@ const ScannerScreen = ({ route, navigation }: any) => {
             t('scanner.duplicateBarcode.message', {
               value: barcodeValue,
               type: scannedCode.type,
+              position:
+                i18n.language === 'en'
+                  ? getOrdinalNumber(duplicateResult.position || 0)
+                  : duplicateResult.position || 0,
             }),
             [
               {
@@ -694,7 +769,9 @@ const ScannerScreen = ({ route, navigation }: any) => {
           // Reload session to get updated barcode count
           await loadSession();
 
-          const photoStatus = session.autosavePictures
+          // Get the updated session data for photo status message
+          const updatedSession = await getSessionById(currentSessionId);
+          const photoStatus = updatedSession?.autosavePictures
             ? photoPath
               ? ` ${t('scanner.scannedBarcode.photoSuccess')}`
               : ` ${t('scanner.scannedBarcode.photoError')}`
@@ -873,6 +950,15 @@ const ScannerScreen = ({ route, navigation }: any) => {
               {t('scanner.viewHistory')}
             </Button>
           </View>
+          <Button
+            mode="outlined"
+            onPress={handleManualPhotoCapture}
+            style={styles(theme).manualPhotoButton}
+            icon="camera"
+            textColor="#fff"
+          >
+            Take Back Picture
+          </Button>
         </View>
       </View>
 
@@ -1042,6 +1128,9 @@ const styles = (theme: any) =>
     buttonContainer: {
       flexDirection: 'row',
       gap: 12,
+    },
+    manualPhotoButton: {
+      marginTop: 8,
     },
     historyButton: {
       flex: 1,
