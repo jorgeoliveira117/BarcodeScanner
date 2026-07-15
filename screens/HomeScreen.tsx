@@ -1,19 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Platform, BackHandler } from 'react-native';
 import { Button, Text, useTheme, Icon } from 'react-native-paper';
-import { getSessions, Session, getSessionById } from '../utils/storage';
-import {
-  getActiveSessionData,
-  ActiveSessionData,
-} from '../utils/activeSession';
+import { Session } from '../utils/storage';
+import { useActiveSession } from '../hooks/useActiveSession';
 import { useTranslation } from 'react-i18next';
 
 const HomeScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [activeSession, setActiveSession] = useState<Session | null>(null);
-  const [activeSessionData, setActiveSessionData] =
-    useState<ActiveSessionData | null>(null);
+  const { activeSession, activeSessionData, loadActiveSession } =
+    useActiveSession();
 
   useEffect(() => {
     loadActiveSession();
@@ -27,33 +23,6 @@ const HomeScreen = ({ navigation }: any) => {
 
     return unsubscribe;
   }, [navigation]);
-
-  const loadActiveSession = async () => {
-    try {
-      const activeSessionData = await getActiveSessionData();
-
-      if (activeSessionData) {
-        // Get the full session data
-        const session = await getSessionById(activeSessionData.sessionId);
-
-        if (session) {
-          setActiveSession(session);
-          setActiveSessionData(activeSessionData);
-        } else {
-          // Session doesn't exist anymore, clear active session
-          setActiveSession(null);
-          setActiveSessionData(null);
-        }
-      } else {
-        setActiveSession(null);
-        setActiveSessionData(null);
-      }
-    } catch (error) {
-      console.error('Error loading active session:', error);
-      setActiveSession(null);
-      setActiveSessionData(null);
-    }
-  };
 
   const handleResumeSession = () => {
     if (activeSession) {

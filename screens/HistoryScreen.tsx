@@ -24,11 +24,11 @@ import {
   removeBarcodeFromSession,
   exportSessionToCSV,
   exportSessionToJSON,
-  getSessionById,
   Session,
 } from '../utils/storage';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { useSession } from '../hooks/useSession';
 
 interface Barcode {
   id: string;
@@ -42,7 +42,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { sessionId } = route.params || {};
-  const [session, setSession] = useState<Session | null>(null);
+  const { session, loadSession } = useSession();
   const [barcodes, setBarcodes] = useState<Barcode[]>([]);
   const [filteredBarcodes, setFilteredBarcodes] = useState<Barcode[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,8 +69,7 @@ const HistoryScreen = ({ route, navigation }: any) => {
   const loadSessionData = async () => {
     if (sessionId === null || sessionId === undefined) return;
 
-    const sessionData = await getSessionById(sessionId);
-    setSession(sessionData);
+    const sessionData = await loadSession(sessionId);
 
     if (sessionData) {
       const sessionBarcodes = await getBarcodesFromSession(sessionId);
