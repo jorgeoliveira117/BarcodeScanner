@@ -5,7 +5,6 @@ import {
   Alert,
   PermissionsAndroid,
   Platform,
-  Vibration,
 } from 'react-native';
 import {
   Camera,
@@ -19,7 +18,6 @@ import {
   useTheme,
   ProgressBar,
 } from 'react-native-paper';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {
   addBarcodeToSession,
   removeBarcodeFromSession,
@@ -31,11 +29,11 @@ import { AppSettings } from '../utils/settings';
 import { setActiveSession, getActiveSessionId } from '../utils/activeSession';
 import { requestStoragePermission as requestSharedStoragePermission } from '../utils/permissions';
 import RNFS from 'react-native-fs';
-import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useSession } from '../hooks/useSession';
 import { useNotification } from '../hooks/useNotification';
+import { useAudioHaptics } from '../hooks/useAudioHaptics';
 
 const getOrdinalNumber = (num: number): string => {
   const suffix = ['th', 'st', 'nd', 'rd'];
@@ -58,6 +56,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const { session, setSession, loadSession } = useSession();
   const { notification, setNotification, showNotification, hideNotification } =
     useNotification();
+  const { initializeSounds, triggerFeedback } = useAudioHaptics(settings);
   const { sessionId: routeSessionId } = route.params || {};
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     routeSessionId || null,
@@ -66,10 +65,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isScanningActive, setIsScanningActive] = useState(true);
-
-  // Sound refs
-  const successSoundRef = useRef<Sound | null>(null);
-  const errorSoundRef = useRef<Sound | null>(null);
 
   const [pendingBarcode, setPendingBarcode] = useState<{
     value: string;
@@ -217,84 +212,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
       setIsScanningActive(true);
       cooldownRef.current = null;
     }, settings.scanCooldown);
-  };
-
-  const initializeSounds = () => {
-    // Enable playback in silence mode (iOS)
-    Sound.setCategory('Playback');
-
-    // Try to load success sound, but don't fail if it doesn't exist
-    try {
-      successSoundRef.current = new Sound(
-        'success.wav',
-        Sound.MAIN_BUNDLE,
-        error => {
-          if (error) {
-            console.log('Success sound not found, using system default');
-            successSoundRef.current = null;
-          }
-        },
-      );
-    } catch (error) {
-      console.log('Failed to initialize success sound:', error);
-      successSoundRef.current = null;
-    }
-
-    // Try to load error sound, but don't fail if it doesn't exist
-    try {
-      errorSoundRef.current = new Sound(
-        'error.wav',
-        Sound.MAIN_BUNDLE,
-        error => {
-          if (error) {
-            console.log('Error sound not found, using system default');
-            errorSoundRef.current = null;
-          }
-        },
-      );
-    } catch (error) {
-      console.log('Failed to initialize error sound:', error);
-      errorSoundRef.current = null;
-    }
-  };
-
-  const playSound = (isError = false) => {
-    const soundRef = isError ? errorSoundRef.current : successSoundRef.current;
-
-    if (soundRef && settings.volume > 0) {
-      // Set volume based on user settings (0.0 to 1.0)
-      soundRef.setVolume(settings.volume);
-
-      // Play the sound
-      soundRef.play(success => {
-        if (!success) {
-          console.log('Sound playback failed');
-        }
-      });
-    }
-  };
-
-  const triggerFeedback = (error = false) => {
-    playSound(error);
-
-    if (settings.vibrationEnabled) {
-      // Try haptic feedback first (iOS and some Android devices)
-      const hapticOptions = {
-        enableVibrateFallback: true,
-        ignoreAndroidSystemSettings: false,
-      };
-
-      if (error) {
-        ReactNativeHapticFeedback.trigger('impactHeavy', hapticOptions);
-      } else {
-        ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
-      }
-
-      // Fallback vibration for Android devices that don't support haptic feedback
-      if (Platform.OS === 'android') {
-        Vibration.vibrate(error ? 500 : 200);
-      }
-    }
   };
 
   const checkForDuplicateBarcode = async (
