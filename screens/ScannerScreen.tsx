@@ -26,6 +26,7 @@ import { usePhotoCapture } from '../hooks/usePhotoCapture';
 import { usePermissions } from '../hooks/usePermissions';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import TwoActionButtonsRow from '../components/TwoActionButtonsRow';
 
 type ScannerScreenProps = NativeStackScreenProps<RootStackParamList, 'Scanner'>;
 
@@ -393,17 +394,17 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
           >
             {t('scanner.takeBackPicture')}
           </Button>
-          <View style={styles(theme).buttonContainer}>
-            <Button
-              mode="contained"
-              onPress={() => navigation.goBack()}
-              style={styles(theme).backButton}
-            >
-              {t('scanner.back')}
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={() => {
+          <TwoActionButtonsRow
+            left={{
+              label: t('scanner.back'),
+              mode: 'contained',
+              onPress: () => navigation.goBack(),
+            }}
+            right={{
+              label: t('scanner.viewHistory'),
+              mode: 'outlined',
+              textColor: '#fff',
+              onPress: () => {
                 if (
                   currentSessionId !== null &&
                   currentSessionId !== undefined
@@ -412,13 +413,9 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
                     sessionId: currentSessionId,
                   });
                 }
-              }}
-              style={styles(theme).historyButton}
-              textColor="#fff"
-            >
-              {t('scanner.viewHistory')}
-            </Button>
-          </View>
+              },
+            }}
+          />
         </View>
       </View>
 
@@ -585,18 +582,8 @@ const styles = (theme: any) =>
       gap: 4,
       backgroundColor: theme.colors.background,
     },
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
     manualPhotoButton: {
       marginTop: 8,
-    },
-    historyButton: {
-      flex: 1,
-    },
-    backButton: {
-      flex: 1,
     },
     permissionContainer: {
       flex: 1,

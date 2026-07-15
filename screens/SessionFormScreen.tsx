@@ -16,6 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import BarcodeTypeSelector from '../components/BarcodeTypeSelector';
 import GpsInfoBlock from '../components/GpsInfoBlock';
+import TwoActionButtonsRow from '../components/TwoActionButtonsRow';
 
 type SessionFormScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -194,26 +195,22 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           />
         </View>
 
-        <View style={styles(theme).buttonContainer}>
-          <Button
-            mode="outlined"
-            onPress={() => navigation.goBack()}
-            style={styles(theme).cancelButton}
-          >
-            {t('sessionForm.form.buttonCancel')}
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleSubmit}
-            style={styles(theme).submitButton}
-            loading={isLoading}
-            disabled={isLoading}
-          >
-            {isEditMode
+        <TwoActionButtonsRow
+          left={{
+            label: t('sessionForm.form.buttonCancel'),
+            mode: 'outlined',
+            onPress: () => navigation.goBack(),
+          }}
+          right={{
+            label: isEditMode
               ? t('sessionForm.form.buttonSave')
-              : t('sessionForm.form.buttonCreate')}
-          </Button>
-        </View>
+              : t('sessionForm.form.buttonCreate'),
+            mode: 'contained',
+            onPress: handleSubmit,
+            loading: isLoading,
+            disabled: isLoading,
+          }}
+        />
         <View style={styles(theme).bottomSpacing} />
       </ScrollView>
     </View>
@@ -292,16 +289,6 @@ const styles = (theme: any) =>
       fontSize: 16,
       fontWeight: 'bold',
       color: theme.colors.text,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    cancelButton: {
-      flex: 1,
-    },
-    submitButton: {
-      flex: 1,
     },
     scrollContent: {
       flex: 1,

@@ -5,13 +5,10 @@ import {
   FlatList,
   Alert,
   Share,
-  TouchableOpacity,
-  Image,
   Platform,
 } from 'react-native';
 import {
   Button,
-  Card,
   Text,
   FAB,
   Searchbar,
@@ -26,19 +23,13 @@ import {
   exportSessionToJSON,
   Session,
 } from '../utils/storage';
-import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../hooks/useSession';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-
-interface Barcode {
-  id: string;
-  value: string;
-  type: string;
-  timestamp: string;
-  photoPath?: string;
-}
+import BarcodeHistoryItem, {
+  HistoryBarcodeItemData,
+} from '../components/BarcodeHistoryItem';
 
 type HistoryScreenProps = NativeStackScreenProps<RootStackParamList, 'History'>;
 
@@ -47,8 +38,10 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
   const theme = useTheme();
   const { sessionId } = route.params || {};
   const { session, loadSession } = useSession();
-  const [barcodes, setBarcodes] = useState<Barcode[]>([]);
-  const [filteredBarcodes, setFilteredBarcodes] = useState<Barcode[]>([]);
+  const [barcodes, setBarcodes] = useState<HistoryBarcodeItemData[]>([]);
+  const [filteredBarcodes, setFilteredBarcodes] = useState<
+    HistoryBarcodeItemData[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -151,36 +144,12 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
     );
   };
 
-  const renderBarcodeItem = ({ item }: { item: Barcode }) => (
-    <View style={styles(theme).card}>
-      <View style={styles(theme).cardHeader}>
-        <Text style={styles(theme).barcodeType}>{item.type.toUpperCase()}</Text>
-        <View style={styles(theme).headerActions}>
-          <Text style={styles(theme).timestamp}>
-            {format(new Date(item.timestamp), 'MMM dd, yyyy HH:mm')}
-          </Text>
-          <IconButton
-            icon="delete"
-            size={16}
-            onPress={() => handleDeleteBarcode(item.id)}
-          />
-        </View>
-      </View>
-      <Text style={styles(theme).barcodeValue}>{item.value}</Text>
-      {/* Add photo display */}
-      {item.photoPath && (
-        <TouchableOpacity
-          style={styles(theme).photoContainer}
-          onPress={() => showPhotoModal(item.photoPath, item.value)}
-        >
-          <Image
-            source={{ uri: `file://${item.photoPath}` }}
-            style={styles(theme).thumbnail}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-      )}
-    </View>
+  const renderBarcodeItem = ({ item }: { item: HistoryBarcodeItemData }) => (
+    <BarcodeHistoryItem
+      item={item}
+      onDelete={handleDeleteBarcode}
+      onShowPhoto={showPhotoModal}
+    />
   );
 
   if (!session) {
@@ -342,60 +311,6 @@ const styles = (theme: any) =>
     list: {
       flex: 1,
       paddingHorizontal: 16,
-    },
-    card: {
-      marginBottom: 8,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.colors.outlineVariant,
-      paddingHorizontal: 8,
-    },
-    cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    headerActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    barcodeType: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 4,
-      borderWidth: 1,
-      borderColor: theme.colors.outlineVariant,
-    },
-    timestamp: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-      marginRight: 4,
-    },
-    barcodeValue: {
-      fontSize: 16,
-      fontFamily: 'monospace',
-      color: theme.colors.text,
-      marginLeft: 2,
-      marginBottom: 8,
-    },
-    photoContainer: {
-      alignItems: 'center',
-      padding: 8,
-      borderRadius: 8,
-    },
-    thumbnail: {
-      width: 100,
-      height: 100,
-      borderRadius: 8,
-      marginBottom: 6,
-    },
-    photoLabel: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-      textAlign: 'center',
     },
     emptyContainer: {
       flex: 1,
