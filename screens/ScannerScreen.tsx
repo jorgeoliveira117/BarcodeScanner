@@ -34,7 +34,10 @@ import { useAppSettings } from '../hooks/useAppSettings';
 import { useSession } from '../hooks/useSession';
 import { useNotification } from '../hooks/useNotification';
 import { useAudioHaptics } from '../hooks/useAudioHaptics';
-import { usePhotoCapture } from '../hooks/usePhotoCapture';
+import {
+  usePhotoCapture,
+  useScannerPermissions,
+} from '../hooks/usePhotoCapture';
 
 const getOrdinalNumber = (num: number): string => {
   const suffix = ['th', 'st', 'nd', 'rd'];
@@ -62,8 +65,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     routeSessionId || null,
   );
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
-  const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isScanningActive, setIsScanningActive] = useState(true);
 
@@ -77,12 +78,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
-  const { capturePhoto } = usePhotoCapture({
-    cameraRef,
-    hasStoragePermission,
-    session,
-    sanitizeFileNamePart,
-  });
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -357,33 +352,23 @@ const ScannerScreen = ({ route, navigation }: any) => {
     return hasPermission;
   };
 
+  const {
+    hasCameraPermission,
+    hasStoragePermission,
+    setHasCameraPermission,
+    setHasStoragePermission,
+    checkCameraAndStoragePermissions,
+  } = useScannerPermissions({ requestStoragePermission });
+  const { capturePhoto } = usePhotoCapture({
+    cameraRef,
+    hasStoragePermission,
+    session,
+    sanitizeFileNamePart,
+  });
+
   useEffect(() => {
-    const checkPermissions = async () => {
-      try {
-        // Check camera permission (required)
-        const cameraPermission = await Camera.getCameraPermissionStatus();
-        console.log('Current camera permission:', cameraPermission);
-
-        // Check storage permission (optional, for photo saving)
-        const storagePermission = await requestStoragePermission();
-
-        if (cameraPermission === 'granted') {
-          setHasCameraPermission(true);
-        } else if (cameraPermission === 'not-determined') {
-          const newCameraPermission = await Camera.requestCameraPermission();
-          console.log('New camera permission:', newCameraPermission);
-          setHasCameraPermission(newCameraPermission === 'granted');
-        } else {
-          // Camera permission was denied
-          setHasCameraPermission(false);
-        }
-      } catch (error) {
-        console.error('Error checking permissions:', error);
-        setHasCameraPermission(false);
-      }
-    };
-    checkPermissions();
-  }, []);
+    checkCameraAndStoragePermissions();
+  }, [checkCameraAndStoragePermissions]);
 
   const handleManualPhotoCapture = async () => {
     const lastScannedBarcode = session?.barcodes?.[0]?.value;
