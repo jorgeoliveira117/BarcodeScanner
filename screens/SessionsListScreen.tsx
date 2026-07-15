@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
   FlatList,
   Alert,
-  ScrollView,
   Platform,
   Linking,
 } from 'react-native';
 import {
   Button,
-  Card,
   Text,
   FAB,
   IconButton,
@@ -18,14 +16,15 @@ import {
   useTheme,
   Icon,
 } from 'react-native-paper';
-import { getSessions, deleteSession, Session } from '../utils/storage';
+import { Session } from '../utils/storage';
 import { setActiveSession } from '../utils/activeSession';
 import { useTranslation } from 'react-i18next';
+import { useSessions } from '../hooks/useSessions';
 
 const SessionsListScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const { sessions, loadSessions, deleteAndRefreshSession } = useSessions();
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -34,11 +33,6 @@ const SessionsListScreen = ({ navigation }: any) => {
 
     return unsubscribe;
   }, [navigation]);
-
-  const loadSessions = async () => {
-    const allSessions = await getSessions();
-    setSessions(allSessions);
-  };
 
   const handleDeleteSession = (sessionId: number) => {
     Alert.alert(
@@ -50,8 +44,7 @@ const SessionsListScreen = ({ navigation }: any) => {
           text: t('alert.delete'),
           style: 'destructive',
           onPress: async () => {
-            await deleteSession(sessionId);
-            loadSessions();
+            await deleteAndRefreshSession(sessionId);
           },
         },
       ],
