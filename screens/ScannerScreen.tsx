@@ -34,6 +34,7 @@ import { useAppSettings } from '../hooks/useAppSettings';
 import { useSession } from '../hooks/useSession';
 import { useNotification } from '../hooks/useNotification';
 import { useAudioHaptics } from '../hooks/useAudioHaptics';
+import { usePhotoCapture } from '../hooks/usePhotoCapture';
 
 const getOrdinalNumber = (num: number): string => {
   const suffix = ['th', 'st', 'nd', 'rd'];
@@ -76,6 +77,12 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+  const { capturePhoto } = usePhotoCapture({
+    cameraRef,
+    hasStoragePermission,
+    session,
+    sanitizeFileNamePart,
+  });
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -322,31 +329,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
     );
   };
 
-  const createAppFolder = async () => {
-    try {
-      let folderPath;
-      if (session) {
-        // Create session-specific folder
-        folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner/${session.folderName}`;
-      } else {
-        // Fallback to general app folder
-        folderPath = `${RNFS.ExternalStorageDirectoryPath}/Pictures/BarcodeScanner`;
-      }
-
-      const exists = await RNFS.exists(folderPath);
-
-      if (!exists) {
-        await RNFS.mkdir(folderPath);
-        console.log('Created app folder:', folderPath);
-      }
-
-      return folderPath;
-    } catch (error) {
-      console.error('Error creating app folder:', error);
-      return null;
-    }
-  };
-
   const requestStoragePermission = async () => {
     console.log('Requesting storage permission...');
     const hasPermission = await requestSharedStoragePermission(
@@ -402,61 +384,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
     };
     checkPermissions();
   }, []);
-
-  const capturePhoto = async (namePart: string = 'barcode') => {
-    try {
-      if (cameraRef.current) {
-        // Take the photo
-        const photo = await cameraRef.current.takePhoto();
-
-        // Create a unique filename using the provided base name
-        const timestamp = new Date().getTime();
-        const safeNamePart = sanitizeFileNamePart(namePart) || 'barcode';
-        const filename = `${safeNamePart}_${timestamp}.jpg`;
-
-        let destPath;
-        if (hasStoragePermission && Platform.OS === 'android') {
-          // Save to external storage (gallery) if permission is granted
-          const folderPath = await createAppFolder();
-          if (folderPath) {
-            destPath = `${folderPath}/${filename}`;
-          } else {
-            // Fallback to app documents
-            destPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
-          }
-        } else {
-          // Default to app documents
-          destPath = `${RNFS.DocumentDirectoryPath}/${filename}`;
-        }
-
-        // Move the photo from temp location to destination
-        await RNFS.moveFile(photo.path, destPath);
-
-        console.log('Photo saved to:', destPath);
-
-        // If saved to external storage, scan for media to make it visible in gallery
-        if (
-          hasStoragePermission &&
-          Platform.OS === 'android' &&
-          destPath.includes('Pictures/BarcodeScanner')
-        ) {
-          try {
-            // Trigger media scanner to make the image appear in gallery
-            await RNFS.scanFile(destPath);
-            console.log('Image scanned for gallery visibility');
-          } catch (scanError) {
-            console.log('Media scan failed, but photo is saved:', scanError);
-          }
-        }
-
-        return destPath;
-      }
-    } catch (error) {
-      console.error('Error capturing/saving photo:', error);
-      return null;
-    }
-    return null;
-  };
 
   const handleManualPhotoCapture = async () => {
     const lastScannedBarcode = session?.barcodes?.[0]?.value;
