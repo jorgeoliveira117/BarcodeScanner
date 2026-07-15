@@ -4,6 +4,10 @@ import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import './utils/i18n';
 
@@ -51,13 +55,21 @@ const theme = {
 function App() {
   const { t } = useTranslation();
 
-  return (
-    <PaperProvider theme={theme}>
-      <StatusBar barStyle="light-content" backgroundColor="#050019" />
+  const AppNavigator = () => {
+    const insets = useSafeAreaInsets();
+
+    return (
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Home"
-          screenOptions={{ headerShown: false }}
+          screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              paddingTop: insets.top,
+              paddingBottom: insets.bottom,
+              backgroundColor: '#050019',
+            },
+          }}
         >
           <Stack.Screen
             name="Home"
@@ -91,6 +103,19 @@ function App() {
           />
         </Stack.Navigator>
       </NavigationContainer>
+    );
+  };
+
+  return (
+    <PaperProvider theme={theme}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#050019"
+        translucent={false}
+      />
+      <SafeAreaProvider>
+        <AppNavigator />
+      </SafeAreaProvider>
     </PaperProvider>
   );
 }

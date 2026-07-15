@@ -931,6 +931,15 @@ const ScannerScreen = ({ route, navigation }: any) => {
               </View>
             </View>
           )}
+          <Button
+            mode="outlined"
+            onPress={handleManualPhotoCapture}
+            style={styles(theme).manualPhotoButton}
+            icon="camera"
+            textColor="#fff"
+          >
+            Take Back Picture
+          </Button>
           <View style={styles(theme).buttonContainer}>
             <Button
               mode="contained"
@@ -950,15 +959,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
               {t('scanner.viewHistory')}
             </Button>
           </View>
-          <Button
-            mode="outlined"
-            onPress={handleManualPhotoCapture}
-            style={styles(theme).manualPhotoButton}
-            icon="camera"
-            textColor="#fff"
-          >
-            Take Back Picture
-          </Button>
         </View>
       </View>
 
