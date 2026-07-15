@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import en from '../locales/en';
 import it from '../locales/it';
+import ro from '../locales/ro';
 
 const LANGUAGE_DETECTOR = {
   type: 'languageDetector' as const,
@@ -65,6 +66,7 @@ i18n
     resources: {
       en: { translation: en },
       it: { translation: it },
+      ro: { translation: ro },
     },
     fallbackLng: 'en',
     debug: __DEV__,

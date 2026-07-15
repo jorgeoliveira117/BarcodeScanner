@@ -225,6 +225,7 @@ const SettingsScreen = ({ navigation }: any) => {
     const languageOptions = [
       { label: 'English', value: 'en' },
       { label: 'Italiano', value: 'it' },
+      { label: 'Romana', value: 'ro' },
     ];
     const option = languageOptions.find(opt => opt.value === currentLang);
     return option ? option.label : 'English';

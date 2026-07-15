@@ -62,6 +62,10 @@ export default {
         label: 'Italiano',
         value: 'it',
       },
+      {
+        label: 'Romana',
+        value: 'ro',
+      },
     ],
     permissionsLabel: 'Permissions',
     cameraPermissionLabel: 'Camera',
