@@ -20,7 +20,8 @@ import {
 } from 'react-native-paper';
 import Slider from '@react-native-community/slider';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { getSettings, updateSettings, AppSettings } from '../utils/settings';
+import { AppSettings } from '../utils/settings';
+import { useAppSettings } from '../hooks/useAppSettings';
 import { useTranslation } from 'react-i18next';
 
 interface LanguageOption {
@@ -31,43 +32,14 @@ interface LanguageOption {
 const SettingsScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
-  const [settings, setSettings] = useState<AppSettings>({
-    volume: 0.5,
-    scanCooldown: 3000,
-    vibrationEnabled: true,
-    language: 'en',
-  });
+  const { settings, loading, saveSetting } = useAppSettings();
   const [cameraPermission, setCameraPermission] = useState<string>('unknown');
   const [storagePermission, setStoragePermission] = useState<string>('unknown');
-  const [loading, setLoading] = useState(true);
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
 
   useEffect(() => {
-    loadSettings();
     checkPermissions();
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const currentSettings = await getSettings();
-
-      // Sync with current i18n language if not set in settings
-      if (!currentSettings.language) {
-        currentSettings.language = i18n.language || 'en';
-      }
-
-      setSettings(currentSettings);
-
-      // Make sure i18n is set to the correct language
-      if (currentSettings.language !== i18n.language) {
-        await i18n.changeLanguage(currentSettings.language);
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const checkPermissions = async () => {
     try {
@@ -168,14 +140,7 @@ const SettingsScreen = ({ navigation }: any) => {
 
   const handleSettingChange = async (key: keyof AppSettings, value: any) => {
     try {
-      const newSettings = { ...settings, [key]: value };
-      setSettings(newSettings);
-      await updateSettings({ [key]: value });
-
-      // If language setting is changed, update i18n
-      if (key === 'language') {
-        await i18n.changeLanguage(value);
-      }
+      await saveSetting(key, value);
     } catch (error) {
       console.error('Error updating setting:', error);
       Alert.alert(

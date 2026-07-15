@@ -27,12 +27,13 @@ import {
   getSessionById,
   Session,
 } from '../utils/storage';
-import { getSettings, AppSettings } from '../utils/settings';
+import { AppSettings } from '../utils/settings';
 import { setActiveSession, getActiveSessionId } from '../utils/activeSession';
 import { requestStoragePermission as requestSharedStoragePermission } from '../utils/permissions';
 import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 const getOrdinalNumber = (num: number): string => {
   const suffix = ['th', 'st', 'nd', 'rd'];
@@ -51,17 +52,12 @@ const sanitizeFileNamePart = (value: string): string => {
 const ScannerScreen = ({ route, navigation }: any) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const { settings, loadSettings } = useAppSettings();
   const { sessionId: routeSessionId } = route.params || {};
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     routeSessionId || null,
   );
   const [session, setSession] = useState<Session | null>(null);
-  const [settings, setSettings] = useState<AppSettings>({
-    volume: 0.5,
-    scanCooldown: 3000,
-    vibrationEnabled: true,
-    language: 'en',
-  });
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
@@ -153,15 +149,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
 
     initializeSession();
   }, [routeSessionId]);
-
-  const loadSettings = async () => {
-    try {
-      const currentSettings = await getSettings();
-      setSettings(currentSettings);
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
 
   // Cleanup cooldown timer on unmount
   useEffect(() => {
