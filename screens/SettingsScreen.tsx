@@ -19,124 +19,36 @@ import {
   Menu,
 } from 'react-native-paper';
 import Slider from '@react-native-community/slider';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { RESULTS } from 'react-native-permissions';
 import { AppSettings } from '../utils/settings';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useTranslation } from 'react-i18next';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { useSettingsPermissions } from '../hooks/useSettingsPermissions';
 
 interface LanguageOption {
   value: string;
   label: string;
 }
 
-const SettingsScreen = ({ navigation }: any) => {
+type SettingsScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'Settings'
+>;
+
+const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { settings, loading, saveSetting } = useAppSettings();
-  const [cameraPermission, setCameraPermission] = useState<string>('unknown');
-  const [storagePermission, setStoragePermission] = useState<string>('unknown');
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
-
-  useEffect(() => {
-    checkPermissions();
-  }, []);
-
-  const checkPermissions = async () => {
-    try {
-      // Check camera permission
-      const cameraResult = await check(PERMISSIONS.ANDROID.CAMERA);
-      setCameraPermission(cameraResult);
-
-      // Check storage permission
-      let storageResult;
-      if (Platform.OS === 'android') {
-        if (Platform.Version >= 33) {
-          // Android 13+ uses READ_MEDIA_IMAGES instead of READ_EXTERNAL_STORAGE
-          storageResult = await check(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES);
-        } else {
-          storageResult = await check(
-            PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
-          );
-        }
-      } else {
-        storageResult = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
-      }
-      setStoragePermission(storageResult);
-    } catch (error) {
-      console.error('Error checking permissions:', error);
-    }
-  };
-
-  const requestCameraPermission = async () => {
-    try {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      setCameraPermission(result);
-
-      if (result === RESULTS.GRANTED) {
-        Alert.alert(
-          t('settings.cameraPermissionSuccessTitle'),
-          t('settings.cameraPermissionSuccessMessage'),
-        );
-      } else if (result === RESULTS.DENIED) {
-        Alert.alert(
-          t('settings.cameraPermissionDeniedTitle'),
-          t('settings.cameraPermissionDeniedMessage'),
-        );
-      } else if (result === RESULTS.BLOCKED) {
-        Alert.alert(
-          t('settings.cameraPermissionBlockedTitle'),
-          t('settings.cameraPermissionBlockedMessage'),
-        );
-      }
-    } catch (error) {
-      console.error('Error requesting camera permission:', error);
-      Alert.alert(
-        t('settings.cameraPermissionErrorTitle'),
-        t('settings.cameraPermissionErrorMessage'),
-      );
-    }
-  };
-
-  const requestStoragePermission = async () => {
-    try {
-      let permission;
-      if (Platform.OS === 'android') {
-        if (Platform.Version >= 33) {
-          permission = PERMISSIONS.ANDROID.READ_MEDIA_IMAGES;
-        } else {
-          permission = PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
-        }
-      } else {
-        permission = PERMISSIONS.IOS.PHOTO_LIBRARY;
-      }
-
-      const result = await request(permission);
-      setStoragePermission(result);
-
-      if (result === RESULTS.GRANTED) {
-        Alert.alert(
-          t('settings.storagePermissionSuccessTitle'),
-          t('settings.storagePermissionSuccessMessage'),
-        );
-      } else if (result === RESULTS.DENIED) {
-        Alert.alert(
-          t('settings.storagePermissionDeniedTitle'),
-          t('settings.storagePermissionDeniedMessage'),
-        );
-      } else if (result === RESULTS.BLOCKED) {
-        Alert.alert(
-          t('settings.storagePermissionBlockedTitle'),
-          t('settings.storagePermissionBlockedMessage'),
-        );
-      }
-    } catch (error) {
-      console.error('Error requesting storage permission:', error);
-      Alert.alert(
-        t('settings.storagePermissionErrorTitle'),
-        t('settings.storagePermissionErrorMessage'),
-      );
-    }
-  };
+  const {
+    cameraPermission,
+    storagePermission,
+    requestCameraPermission,
+    requestStoragePermission,
+    getPermissionStatusText,
+  } = useSettingsPermissions({ t: key => t(key) });
 
   const handleSettingChange = async (key: keyof AppSettings, value: any) => {
     try {
@@ -167,21 +79,6 @@ const SettingsScreen = ({ navigation }: any) => {
         return theme.colors.error;
       default:
         return '#FF9800'; // Orange color for warning
-    }
-  };
-
-  const getPermissionStatusText = (status: string) => {
-    switch (status) {
-      case RESULTS.GRANTED:
-        return t('settings.permissions.granted');
-      case RESULTS.DENIED:
-        return t('settings.permissions.denied');
-      case RESULTS.BLOCKED:
-        return t('settings.permissions.blocked');
-      case RESULTS.UNAVAILABLE:
-        return t('settings.permissions.unavailable');
-      default:
-        return t('settings.permissions.unknown');
     }
   };
 

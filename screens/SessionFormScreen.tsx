@@ -15,16 +15,13 @@ import { BARCODE_TYPES, Session } from '../utils/storage';
 import { CodeType } from 'react-native-vision-camera';
 import { useTranslation } from 'react-i18next';
 import { useSessionForm } from '../hooks/useSessionForm';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
-interface SessionFormScreenProps {
-  route: {
-    params?: {
-      session?: Session;
-      mode: 'create' | 'edit';
-    };
-  };
-  navigation: any;
-}
+type SessionFormScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'SessionForm'
+>;
 
 const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   const { t } = useTranslation();

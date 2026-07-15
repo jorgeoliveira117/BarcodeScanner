@@ -4,8 +4,12 @@ import { Button, Text, useTheme, Icon } from 'react-native-paper';
 import { Session } from '../utils/storage';
 import { useActiveSession } from '../hooks/useActiveSession';
 import { useTranslation } from 'react-i18next';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
-const HomeScreen = ({ navigation }: any) => {
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { activeSession, activeSessionData, loadActiveSession } =

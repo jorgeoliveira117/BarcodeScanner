@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { CodeType } from 'react-native-vision-camera';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import {
   BARCODE_TYPES,
@@ -13,6 +14,9 @@ import {
 } from '../utils/storage';
 import { requestStoragePermission } from '../utils/permissions';
 import { requestLocationPermission } from './usePermissions';
+import { RootStackParamList } from '../navigation/types';
+
+type AppNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const DEFAULT_EXPECTED_CODE_TYPES: CodeType[] = ['code-128', 'data-matrix'];
 
@@ -36,7 +40,7 @@ interface UseSessionFormOptions {
   session?: Session;
   isEditMode: boolean;
   showIgnoreCodesSection: boolean;
-  navigation: any;
+  navigation: AppNavigation;
   t: (key: string, options?: Record<string, unknown>) => string;
 }
 

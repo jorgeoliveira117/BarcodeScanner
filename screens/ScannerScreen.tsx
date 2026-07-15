@@ -24,6 +24,10 @@ import { useAudioHaptics } from '../hooks/useAudioHaptics';
 import { useScannerBarcodeProcessor } from '../hooks/useScannerBarcodeProcessor';
 import { usePhotoCapture } from '../hooks/usePhotoCapture';
 import { usePermissions } from '../hooks/usePermissions';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+
+type ScannerScreenProps = NativeStackScreenProps<RootStackParamList, 'Scanner'>;
 
 const sanitizeFileNamePart = (value: string): string => {
   return value
@@ -33,7 +37,7 @@ const sanitizeFileNamePart = (value: string): string => {
     .replace(/^_+|_+$/g, '');
 };
 
-const ScannerScreen = ({ route, navigation }: any) => {
+const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { settings, loadSettings } = useAppSettings();
@@ -56,7 +60,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
       loadSettings();
       initializeSounds();
 
-      let sessionIdToUse = routeSessionId;
+      let sessionIdToUse: number | null | undefined = routeSessionId;
       console.log(
         '🎯 ScannerScreen mounted with route sessionId:',
         routeSessionId,
@@ -399,9 +403,16 @@ const ScannerScreen = ({ route, navigation }: any) => {
             </Button>
             <Button
               mode="outlined"
-              onPress={() =>
-                navigation.navigate('History', { sessionId: currentSessionId })
-              }
+              onPress={() => {
+                if (
+                  currentSessionId !== null &&
+                  currentSessionId !== undefined
+                ) {
+                  navigation.navigate('History', {
+                    sessionId: currentSessionId,
+                  });
+                }
+              }}
               style={styles(theme).historyButton}
               textColor="#fff"
             >

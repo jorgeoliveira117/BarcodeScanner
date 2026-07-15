@@ -21,6 +21,7 @@ import { Session } from '../utils/storage';
 import { setActiveSession } from '../utils/activeSession';
 import { useTranslation } from 'react-i18next';
 import { useSessions } from '../hooks/useSessions';
+import SessionCard from '../components/SessionCard';
 import { RootStackParamList } from '../navigation/types';
 
 type SessionsListScreenProps = NativeStackScreenProps<
@@ -121,123 +122,15 @@ const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
   };
 
   const renderSessionItem = ({ item }: { item: Session }) => (
-    <View style={styles(theme).card}>
-      <View style={styles(theme).cardHeader}>
-        <Text style={styles(theme).sessionName} variant="titleLarge">
-          {item.name}
-        </Text>
-        <View style={styles(theme).headerActions}>
-          {item.gpsLocation && (
-            <IconButton
-              icon="map-marker"
-              size={20}
-              onPress={() => openGoogleMaps(item)}
-              iconColor="#F7F7FF"
-            />
-          )}
-          <IconButton
-            icon="pencil"
-            size={20}
-            onPress={() => handleEditSession(item)}
-            iconColor="#F7F7FF"
-          />
-          <IconButton
-            icon="delete"
-            size={20}
-            onPress={() => handleDeleteSession(item.id)}
-            iconColor="#F7F7FF"
-          />
-        </View>
-      </View>
-
-      <Text style={styles(theme).location}>
-        <Icon source="map-marker" size={16} color="#F7F7FF" /> {item.location}
-      </Text>
-
-      <View style={styles(theme).statsContainer}>
-        <Text style={styles(theme).statText}>
-          {item.barcodes.length} / {item.expectedCodes}{' '}
-          {t('sessionList.session.barcodes')}
-        </Text>
-        {item.expectedCodeTypes && item.expectedCodeTypes.length > 0 && (
-          <Text style={styles(theme).statText}>
-            {t('sessionList.session.barcodesExpected')}{' '}
-            {item.expectedCodeTypes.join(', ').toUpperCase()}
-          </Text>
-        )}
-        {item.codesToIgnore && item.codesToIgnore.length > 0 && (
-          <Text style={styles(theme).statText}>
-            {t('sessionList.session.barcodesIgnored')}{' '}
-            {item.codesToIgnore.join(', ').toUpperCase()}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles(theme).chipsContainer}>
-        {item.autosavePictures && (
-          <Chip
-            mode="outlined"
-            style={styles(theme).chip}
-            textStyle={styles(theme).chipText}
-          >
-            <View style={styles(theme).chipContent}>
-              <Icon source="camera" size={16} color={theme.colors.background} />
-              <Text style={styles(theme).chipText}>
-                {t('sessionList.session.autoSave')}
-              </Text>
-            </View>
-          </Chip>
-        )}
-        <Chip
-          mode="outlined"
-          style={[
-            styles(theme).chip,
-            item.barcodes.length >= item.expectedCodes
-              ? styles(theme).completeChip
-              : styles(theme).incompleteChip,
-          ]}
-        >
-          {item.barcodes.length >= item.expectedCodes ? (
-            <View style={styles(theme).chipContent}>
-              <Icon source="check" size={16} color="#F7F7FF" />
-              <Text style={styles(theme).completeChipText}>
-                {t('sessionList.session.complete')}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles(theme).chipContent}>
-              <Icon
-                source="timer-sand"
-                size={16}
-                color={theme.colors.background}
-              />
-              <Text style={styles(theme).incompleteChipText}>
-                {t('sessionList.session.inProgress')}
-              </Text>
-            </View>
-          )}
-        </Chip>
-      </View>
-
-      <View style={styles(theme).buttonContainer}>
-        <Button
-          mode="contained"
-          onPress={() => handleResumeSession(item)}
-          style={styles(theme).actionButton}
-          icon="play"
-        >
-          {t('sessionList.session.resume')}
-        </Button>
-        <Button
-          mode="outlined"
-          onPress={() => handleViewHistory(item)}
-          style={styles(theme).actionButton}
-          icon="history"
-        >
-          {t('sessionList.session.viewHistory')}
-        </Button>
-      </View>
-    </View>
+    <SessionCard
+      session={item}
+      onOpenMaps={openGoogleMaps}
+      onEdit={handleEditSession}
+      onDelete={handleDeleteSession}
+      onResume={handleResumeSession}
+      onViewHistory={handleViewHistory}
+      t={t}
+    />
   );
 
   return (

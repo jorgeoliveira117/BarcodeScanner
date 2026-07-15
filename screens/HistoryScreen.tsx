@@ -29,6 +29,8 @@ import {
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../hooks/useSession';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
 interface Barcode {
   id: string;
@@ -38,7 +40,9 @@ interface Barcode {
   photoPath?: string;
 }
 
-const HistoryScreen = ({ route, navigation }: any) => {
+type HistoryScreenProps = NativeStackScreenProps<RootStackParamList, 'History'>;
+
+const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { sessionId } = route.params || {};
