@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,8 +8,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {
-  Card,
-  Title,
   Text,
   Button,
   Switch,
@@ -26,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useSettingsPermissions } from '../hooks/useSettingsPermissions';
+import PermissionStatusRow from '../components/PermissionStatusRow';
 
 interface LanguageOption {
   value: string;
@@ -246,59 +245,27 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
           <Text style={styles(theme).settingLabel}>
             {t('settings.permissionsLabel')}
           </Text>
-          <View style={styles(theme).permissionRow}>
-            <View style={styles(theme).permissionInfo}>
-              <Text style={styles(theme).permissionLabel}>
-                {t('settings.cameraPermissionLabel')}
-              </Text>
-              <Text
-                style={[
-                  styles(theme).permissionStatus,
-                  { color: getPermissionStatusColor(cameraPermission) },
-                ]}
-              >
-                {getPermissionStatusText(cameraPermission)}
-              </Text>
-            </View>
-            <Button
-              mode="outlined"
-              onPress={requestCameraPermission}
-              disabled={cameraPermission === RESULTS.GRANTED}
-              style={styles(theme).permissionButton}
-            >
-              {cameraPermission === RESULTS.GRANTED
-                ? t('settings.permissionsButtonGranted')
-                : t('settings.permissionsButtonRequest')}
-            </Button>
-          </View>
+          <PermissionStatusRow
+            label={t('settings.cameraPermissionLabel')}
+            statusText={getPermissionStatusText(cameraPermission)}
+            statusColor={getPermissionStatusColor(cameraPermission)}
+            isGranted={cameraPermission === RESULTS.GRANTED}
+            onRequest={requestCameraPermission}
+            grantedLabel={t('settings.permissionsButtonGranted')}
+            requestLabel={t('settings.permissionsButtonRequest')}
+          />
 
           <Divider style={styles(theme).divider} />
 
-          <View style={styles(theme).permissionRow}>
-            <View style={styles(theme).permissionInfo}>
-              <Text style={styles(theme).permissionLabel}>
-                {t('settings.storagePermissionLabel')}
-              </Text>
-              <Text
-                style={[
-                  styles(theme).permissionStatus,
-                  { color: getPermissionStatusColor(storagePermission) },
-                ]}
-              >
-                {getPermissionStatusText(storagePermission)}
-              </Text>
-            </View>
-            <Button
-              mode="outlined"
-              onPress={requestStoragePermission}
-              disabled={storagePermission === RESULTS.GRANTED}
-              style={styles(theme).permissionButton}
-            >
-              {storagePermission === RESULTS.GRANTED
-                ? t('settings.permissionsButtonGranted')
-                : t('settings.permissionsButtonRequest')}
-            </Button>
-          </View>
+          <PermissionStatusRow
+            label={t('settings.storagePermissionLabel')}
+            statusText={getPermissionStatusText(storagePermission)}
+            statusColor={getPermissionStatusColor(storagePermission)}
+            isGranted={storagePermission === RESULTS.GRANTED}
+            onRequest={requestStoragePermission}
+            grantedLabel={t('settings.permissionsButtonGranted')}
+            requestLabel={t('settings.permissionsButtonRequest')}
+          />
         </View>
         <View style={styles(theme).bottomSpacing} />
       </ScrollView>
@@ -378,28 +345,6 @@ const styles = (theme: any) =>
       color: theme.colors.text,
       fontStyle: 'italic',
       marginTop: 4,
-    },
-    permissionRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginVertical: 8,
-    },
-    permissionInfo: {
-      flex: 1,
-    },
-    permissionLabel: {
-      fontSize: 14,
-      fontWeight: '500',
-      color: theme.colors.text,
-    },
-    permissionStatus: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      marginTop: 2,
-    },
-    permissionButton: {
-      minWidth: 80,
     },
     divider: {
       marginVertical: 12,

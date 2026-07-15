@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import {
   Button,
   TextInput,
   Text,
-  Card,
-  Chip,
   Switch,
   HelperText,
   useTheme,
   IconButton,
 } from 'react-native-paper';
 import { BARCODE_TYPES, Session } from '../utils/storage';
-import { CodeType } from 'react-native-vision-camera';
 import { useTranslation } from 'react-i18next';
 import { useSessionForm } from '../hooks/useSessionForm';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import BarcodeTypeSelector from '../components/BarcodeTypeSelector';
+import GpsInfoBlock from '../components/GpsInfoBlock';
 
 type SessionFormScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -151,133 +150,39 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           {errors.expectedCodes}
         </HelperText>
 
-        <Text style={styles(theme).sectionTitle}>
-          {t('sessionForm.form.expectedCodeTypes')}
-        </Text>
-        <View style={styles(theme).chipsContainer}>
-          {BARCODE_TYPES.map(type => (
-            <Chip
-              key={type}
-              mode={expectedCodeTypes.includes(type) ? 'flat' : 'outlined'}
-              selected={expectedCodeTypes.includes(type)}
-              onPress={() => toggleCodeType(type)}
-              style={[
-                styles(theme).chip,
-                expectedCodeTypes.includes(type) && styles(theme).expectedChip,
-              ]}
-              textStyle={[
-                styles(theme).chipText,
-                expectedCodeTypes.includes(type) &&
-                  styles(theme).expectedChipText,
-              ]}
-            >
-              {type.toUpperCase()}
-            </Chip>
-          ))}
-        </View>
-        <HelperText type="error" visible={!!errors.expectedCodeTypes}>
-          {errors.expectedCodeTypes}
-        </HelperText>
+        <BarcodeTypeSelector
+          title={t('sessionForm.form.expectedCodeTypes')}
+          types={BARCODE_TYPES}
+          selectedTypes={expectedCodeTypes}
+          onToggle={toggleCodeType}
+          helperError={errors.expectedCodeTypes}
+          variant="expected"
+        />
 
         {showIgnoreCodesSection && (
-          <>
-            <Text style={styles(theme).sectionTitle}>
-              {t('sessionForm.form.codesToIgnore')}
-            </Text>
-            <Text style={styles(theme).sectionDescription}>
-              {t('sessionForm.form.codesToIgnoreDescription')}
-            </Text>
-            <View style={styles(theme).chipsContainer}>
-              {getAvailableIgnoreTypes().map(type => (
-                <Chip
-                  key={`ignore-${type}`}
-                  mode={codesToIgnore.includes(type) ? 'flat' : 'outlined'}
-                  selected={codesToIgnore.includes(type)}
-                  onPress={() => toggleIgnoreCodeType(type)}
-                  style={[
-                    styles(theme).chip,
-                    codesToIgnore.includes(type) && styles(theme).ignoreChip,
-                  ]}
-                  textStyle={[
-                    styles(theme).chipText,
-                    codesToIgnore.includes(type) &&
-                      styles(theme).ignoreChipText,
-                  ]}
-                >
-                  {type.toUpperCase()}
-                </Chip>
-              ))}
-            </View>
-            {getAvailableIgnoreTypes().length === 0 && (
-              <Text style={styles(theme).noIgnoreTypesText}>
-                {t('sessionForm.form.codesToIgnoreEmpty')}
-              </Text>
-            )}
-            <HelperText type="error" visible={!!errors.codesToIgnore}>
-              {errors.codesToIgnore}
-            </HelperText>
-          </>
+          <BarcodeTypeSelector
+            title={t('sessionForm.form.codesToIgnore')}
+            description={t('sessionForm.form.codesToIgnoreDescription')}
+            types={getAvailableIgnoreTypes()}
+            selectedTypes={codesToIgnore}
+            onToggle={toggleIgnoreCodeType}
+            helperError={errors.codesToIgnore}
+            emptyText={t('sessionForm.form.codesToIgnoreEmpty')}
+            variant="ignore"
+          />
         )}
 
         <Text style={styles(theme).sectionTitle}>
           {t('sessionForm.form.gps.label')}
         </Text>
 
-        <View style={styles(theme).gpsContainer}>
-          {gpsLocation ? (
-            <View style={styles(theme).gpsInfoContainer}>
-              <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>
-                  {t('sessionForm.form.gps.lat')}:
-                </Text>
-                <Text style={styles(theme).gpsValue}>
-                  {gpsLocation.latitude.toFixed(6)}
-                </Text>
-              </View>
-              <View style={styles(theme).gpsInfo}>
-                <Text style={styles(theme).gpsLabel}>
-                  {t('sessionForm.form.gps.lon')}:
-                </Text>
-                <Text style={styles(theme).gpsValue}>
-                  {gpsLocation.longitude.toFixed(6)}
-                </Text>
-              </View>
-              <Text style={styles(theme).gpsTimestamp}>
-                {t('sessionForm.form.gps.updated')}{' '}
-                {new Date(gpsLocation.timestamp).toLocaleString()}
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles(theme).noGpsText}>
-              {t('sessionForm.form.gps.none')}
-            </Text>
-          )}
-          <View style={styles(theme).gpsButtonContainer}>
-            <Button
-              mode="outlined"
-              onPress={getCurrentLocation}
-              style={styles(theme).gpsButton}
-              loading={isGettingLocation}
-              disabled={isGettingLocation}
-              icon="crosshairs-gps"
-            >
-              {isGettingLocation
-                ? t('sessionForm.form.gps.gettingLocation')
-                : t('sessionForm.form.gps.getLocation')}
-            </Button>
-            {gpsLocation && (
-              <Button
-                mode="text"
-                onPress={clearGpsLocation}
-                style={styles(theme).clearGpsButton}
-                textColor={theme.colors.error}
-                icon="delete"
-              >
-                {t('sessionForm.form.gps.clearLocation')}
-              </Button>
-            )}
-          </View>
-        </View>
+        <GpsInfoBlock
+          gpsLocation={gpsLocation}
+          isGettingLocation={isGettingLocation}
+          onGetLocation={getCurrentLocation}
+          onClearLocation={clearGpsLocation}
+          t={key => t(key)}
+        />
 
         <View style={styles(theme).switchContainer}>
           <Text style={styles(theme).switchLabel}>
@@ -377,43 +282,6 @@ const styles = (theme: any) =>
       marginBottom: 12,
       color: theme.colors.text,
     },
-    sectionDescription: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
-      marginBottom: 12,
-      fontStyle: 'italic',
-    },
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-    },
-    chip: {
-      marginRight: 8,
-      marginBottom: 8,
-      backgroundColor: theme.colors.background,
-    },
-    chipText: {
-      color: theme.colors.text,
-    },
-    ignoreChip: {
-      backgroundColor: theme.colors.error,
-    },
-    ignoreChipText: {
-      color: theme.colors.background,
-    },
-    expectedChip: {
-      backgroundColor: theme.colors.success,
-    },
-    expectedChipText: {
-      color: theme.colors.background,
-    },
-    noIgnoreTypesText: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-      fontStyle: 'italic',
-      textAlign: 'center',
-      marginVertical: 8,
-    },
     switchContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -445,51 +313,6 @@ const styles = (theme: any) =>
     },
     bottomSpacing: {
       height: 80,
-    },
-    // GPS Location styles
-    gpsContainer: {
-      marginBottom: 20,
-    },
-    gpsInfoContainer: {
-      marginBottom: 12,
-    },
-    gpsInfo: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 4,
-    },
-    gpsLabel: {
-      fontSize: 14,
-      fontWeight: '500',
-      color: theme.colors.onSurfaceVariant,
-    },
-    gpsValue: {
-      fontSize: 14,
-      fontFamily: 'monospace',
-      color: theme.colors.primary,
-      fontWeight: 'bold',
-    },
-    gpsTimestamp: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-      textAlign: 'center',
-      marginTop: 8,
-      fontStyle: 'italic',
-    },
-    noGpsText: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
-      fontStyle: 'italic',
-      marginBottom: 12,
-    },
-    gpsButtonContainer: {
-      gap: 8,
-    },
-    gpsButton: {
-      flex: 1,
-    },
-    clearGpsButton: {
-      flex: 0.5,
     },
   });
 
