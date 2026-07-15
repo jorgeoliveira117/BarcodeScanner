@@ -45,6 +45,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
   const theme = useTheme();
   const { session, mode } = route.params || { mode: 'create' };
   const isEditMode = mode === 'edit';
+  const showIgnoreCodesSection = false;
 
   // Initialize form values based on mode
   const [name, setName] = useState(session?.name || '');
@@ -75,6 +76,8 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     codesToIgnore: '',
   });
 
+  const effectiveCodesToIgnore = showIgnoreCodesSection ? codesToIgnore : [];
+
   const validateForm = () => {
     const newErrors = {
       name: '',
@@ -102,7 +105,10 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     }
 
     // Validate that codesToIgnore doesn't conflict with expectedCodeTypes
-    const validation = validateSessionCodes(expectedCodeTypes, codesToIgnore);
+    const validation = validateSessionCodes(
+      expectedCodeTypes,
+      effectiveCodesToIgnore,
+    );
     if (!validation.isValid) {
       newErrors.codesToIgnore = t('sessionForm.errors.codesToIgnore', {
         conflicts: validation.conflicts.join(', '),
@@ -211,7 +217,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           location: location.trim(),
           gpsLocation: gpsLocation || undefined,
           expectedCodeTypes,
-          codesToIgnore,
+          codesToIgnore: effectiveCodesToIgnore,
           expectedCodes: parseInt(expectedCodes),
           autosavePictures,
         });
@@ -234,7 +240,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           location: location.trim(),
           gpsLocation: gpsLocation || undefined,
           expectedCodeTypes,
-          codesToIgnore,
+          codesToIgnore: effectiveCodesToIgnore,
           expectedCodes: parseInt(expectedCodes),
           autosavePictures,
         });
@@ -408,40 +414,45 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
           {errors.expectedCodeTypes}
         </HelperText>
 
-        <Text style={styles(theme).sectionTitle}>
-          {t('sessionForm.form.codesToIgnore')}
-        </Text>
-        <Text style={styles(theme).sectionDescription}>
-          {t('sessionForm.form.codesToIgnoreDescription')}
-        </Text>
-        <View style={styles(theme).chipsContainer}>
-          {getAvailableIgnoreTypes().map(type => (
-            <Chip
-              key={`ignore-${type}`}
-              mode={codesToIgnore.includes(type) ? 'flat' : 'outlined'}
-              selected={codesToIgnore.includes(type)}
-              onPress={() => toggleIgnoreCodeType(type)}
-              style={[
-                styles(theme).chip,
-                codesToIgnore.includes(type) && styles(theme).ignoreChip,
-              ]}
-              textStyle={[
-                styles(theme).chipText,
-                codesToIgnore.includes(type) && styles(theme).ignoreChipText,
-              ]}
-            >
-              {type.toUpperCase()}
-            </Chip>
-          ))}
-        </View>
-        {getAvailableIgnoreTypes().length === 0 && (
-          <Text style={styles(theme).noIgnoreTypesText}>
-            {t('sessionForm.form.codesToIgnoreEmpty')}
-          </Text>
+        {showIgnoreCodesSection && (
+          <>
+            <Text style={styles(theme).sectionTitle}>
+              {t('sessionForm.form.codesToIgnore')}
+            </Text>
+            <Text style={styles(theme).sectionDescription}>
+              {t('sessionForm.form.codesToIgnoreDescription')}
+            </Text>
+            <View style={styles(theme).chipsContainer}>
+              {getAvailableIgnoreTypes().map(type => (
+                <Chip
+                  key={`ignore-${type}`}
+                  mode={codesToIgnore.includes(type) ? 'flat' : 'outlined'}
+                  selected={codesToIgnore.includes(type)}
+                  onPress={() => toggleIgnoreCodeType(type)}
+                  style={[
+                    styles(theme).chip,
+                    codesToIgnore.includes(type) && styles(theme).ignoreChip,
+                  ]}
+                  textStyle={[
+                    styles(theme).chipText,
+                    codesToIgnore.includes(type) &&
+                      styles(theme).ignoreChipText,
+                  ]}
+                >
+                  {type.toUpperCase()}
+                </Chip>
+              ))}
+            </View>
+            {getAvailableIgnoreTypes().length === 0 && (
+              <Text style={styles(theme).noIgnoreTypesText}>
+                {t('sessionForm.form.codesToIgnoreEmpty')}
+              </Text>
+            )}
+            <HelperText type="error" visible={!!errors.codesToIgnore}>
+              {errors.codesToIgnore}
+            </HelperText>
+          </>
         )}
-        <HelperText type="error" visible={!!errors.codesToIgnore}>
-          {errors.codesToIgnore}
-        </HelperText>
 
         <Text style={styles(theme).sectionTitle}>
           {t('sessionForm.form.gps.label')}
