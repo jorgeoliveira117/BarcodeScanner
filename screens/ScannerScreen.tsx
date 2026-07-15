@@ -34,6 +34,8 @@ import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
 import { useAppSettings } from '../hooks/useAppSettings';
+import { useSession } from '../hooks/useSession';
+import { useNotification } from '../hooks/useNotification';
 
 const getOrdinalNumber = (num: number): string => {
   const suffix = ['th', 'st', 'nd', 'rd'];
@@ -53,11 +55,13 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { settings, loadSettings } = useAppSettings();
+  const { session, setSession, loadSession } = useSession();
+  const { notification, setNotification, showNotification, hideNotification } =
+    useNotification();
   const { sessionId: routeSessionId } = route.params || {};
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     routeSessionId || null,
   );
-  const [session, setSession] = useState<Session | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [hasStoragePermission, setHasStoragePermission] = useState(false);
   const [isActive, setIsActive] = useState(true);
@@ -67,17 +71,6 @@ const ScannerScreen = ({ route, navigation }: any) => {
   const successSoundRef = useRef<Sound | null>(null);
   const errorSoundRef = useRef<Sound | null>(null);
 
-  // Notification system state
-  const [notification, setNotification] = useState<{
-    visible: boolean;
-    message: string;
-    type: 'success' | 'warning' | 'error';
-    actions?: Array<{ text: string; onPress: () => void }>;
-  }>({
-    visible: false,
-    message: '',
-    type: 'success',
-  });
   const [pendingBarcode, setPendingBarcode] = useState<{
     value: string;
     type: string;
@@ -120,11 +113,10 @@ const ScannerScreen = ({ route, navigation }: any) => {
         console.log('✅ Using sessionId:', sessionIdToUse);
         setCurrentSessionId(sessionIdToUse);
         // Load the session data
-        const sessionData = await getSessionById(sessionIdToUse);
+        const sessionData = await loadSession(sessionIdToUse);
         if (sessionData) {
           console.log('📄 Session data loaded:', sessionData.name);
           console.log('🎯 Expected code types:', sessionData.expectedCodeTypes);
-          setSession(sessionData);
         } else {
           console.log('❌ Failed to load session data for ID:', sessionIdToUse);
         }
@@ -172,13 +164,13 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }
   }, [session]);
 
-  const loadSession = async () => {
-    if (!currentSessionId) return;
+  const refreshSession = async () => {
+    if (!currentSessionId) {
+      return null;
+    }
 
-    const sessionData = await getSessionById(currentSessionId);
-    if (sessionData) {
-      setSession(sessionData);
-    } else {
+    const sessionData = await loadSession(currentSessionId);
+    if (!sessionData) {
       Alert.alert(
         t('scanner.sessionNotFound.title'),
         t('scanner.sessionNotFound.message'),
@@ -190,22 +182,17 @@ const ScannerScreen = ({ route, navigation }: any) => {
         ],
       );
     }
+
+    return sessionData;
   };
 
-  // Helper functions for the new notification system
-  const showNotification = (
+  const showScannerNotification = (
     message: string,
     type: 'success' | 'warning' | 'error' = 'success',
     actions?: Array<{ text: string; onPress: () => void }>,
   ) => {
-    setNotification({
-      visible: true,
-      message,
-      type,
-      actions,
-    });
+    showNotification(message, type, actions);
 
-    // Auto-hide notification after 3 seconds if no actions
     if (!actions) {
       setTimeout(() => {
         setNotification(prev => ({ ...prev, visible: false }));
@@ -214,8 +201,8 @@ const ScannerScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const hideNotification = () => {
-    setNotification(prev => ({ ...prev, visible: false }));
+  const hideScannerNotification = () => {
+    hideNotification();
     startScanCooldown();
   };
 
@@ -350,7 +337,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
         photoPath: barcodeData.photoPath,
       });
 
-      await loadSession();
+      await refreshSession();
 
       // Get the updated session data for photo status message
       const updatedSession = await getSessionById(currentSessionId);
@@ -406,7 +393,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
                 currentSessionId,
                 latestBarcode.id,
               );
-              await loadSession(); // Refresh session data
+              await refreshSession(); // Refresh session data
               showNotification(t('scanner.deleteBarcode.success'), 'success');
             } catch (error) {
               console.error('Error deleting barcode:', error);
@@ -713,7 +700,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
           });
 
           // Reload session to get updated barcode count
-          await loadSession();
+          await refreshSession();
 
           // Get the updated session data for photo status message
           const updatedSession = await getSessionById(currentSessionId);
