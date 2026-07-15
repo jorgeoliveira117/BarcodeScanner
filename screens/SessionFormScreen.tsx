@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import {
   Button,
   TextInput,
@@ -7,7 +7,6 @@ import {
   Switch,
   HelperText,
   useTheme,
-  IconButton,
 } from 'react-native-paper';
 import { BARCODE_TYPES, Session } from '../utils/storage';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import { RootStackParamList } from '../navigation/types';
 import BarcodeTypeSelector from '../components/BarcodeTypeSelector';
 import GpsInfoBlock from '../components/GpsInfoBlock';
 import TwoActionButtonsRow from '../components/TwoActionButtonsRow';
+import AppScreenHeader from '../components/AppScreenHeader';
 
 type SessionFormScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -59,27 +59,14 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     t,
   });
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
-
   return (
     <View style={styles(theme).container}>
-      <View style={styles(theme).header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          iconColor="#F7F7FF"
-          onPress={handleGoBack}
-          style={styles(theme).backButton}
-        />
-        <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          {isEditMode
-            ? t('sessionForm.editTitle')
-            : t('sessionForm.createTitle')}
-        </Text>
-        <View style={styles(theme).headerSpacer} />
-      </View>
+      <AppScreenHeader
+        title={
+          isEditMode ? t('sessionForm.editTitle') : t('sessionForm.createTitle')
+        }
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView style={styles(theme).scrollContent}>
         <View style={styles(theme).scrollContentSpacer} />
         {isEditMode && session && (
@@ -219,28 +206,6 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
 
 const styles = (theme: any) =>
   StyleSheet.create({
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 8,
-      paddingVertical: 12,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
-    },
-    backButton: {
-      margin: 0,
-    },
-    headerTitle: {
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center',
-    },
-    headerSpacer: {
-      width: 40, // Same width as back button to center the title
-    },
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,

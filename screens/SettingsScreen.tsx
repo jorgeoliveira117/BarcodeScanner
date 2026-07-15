@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Platform,
   TouchableOpacity,
 } from 'react-native';
 import {
@@ -25,6 +24,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useSettingsPermissions } from '../hooks/useSettingsPermissions';
 import PermissionStatusRow from '../components/PermissionStatusRow';
+import AppScreenHeader from '../components/AppScreenHeader';
 
 interface LanguageOption {
   value: string;
@@ -111,10 +111,6 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
     setLanguageMenuVisible(false);
   };
 
-  const handleGoBack = () => {
-    navigation.navigate('Home');
-  };
-
   if (loading) {
     return (
       <View style={styles(theme).loadingContainer}>
@@ -125,19 +121,11 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
 
   return (
     <View style={styles(theme).container}>
-      <View style={styles(theme).header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          iconColor="#F7F7FF"
-          onPress={handleGoBack}
-          style={styles(theme).backButton}
-        />
-        <Text style={styles(theme).headerTitle} variant="headlineMedium">
-          {t('settings.title')}
-        </Text>
-        <View style={styles(theme).headerSpacer} />
-      </View>
+      <AppScreenHeader
+        title={t('settings.title')}
+        titleVariant="headlineMedium"
+        onBack={() => navigation.navigate('Home')}
+      />
 
       <ScrollView>
         <View style={styles(theme).settingContainer}>
@@ -279,28 +267,6 @@ const styles = (theme: any) =>
       flex: 1,
       backgroundColor: theme.colors.background,
       padding: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 8,
-      paddingVertical: 12,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
-    },
-    backButton: {
-      margin: 0,
-    },
-    headerTitle: {
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center',
-    },
-    headerSpacer: {
-      width: 40, // Same width as back button to center the title
     },
     scrollContent: {
       flex: 1,

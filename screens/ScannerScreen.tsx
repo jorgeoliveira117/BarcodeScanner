@@ -13,8 +13,6 @@ import {
   ProgressBar,
 } from 'react-native-paper';
 import { BARCODE_TYPES } from '../utils/storage';
-import { AppSettings } from '../utils/settings';
-import { setActiveSession, getActiveSessionId } from '../utils/activeSession';
 import { requestStoragePermission as requestSharedStoragePermission } from '../utils/permissions';
 import { useTranslation } from 'react-i18next';
 import { useAppSettings } from '../hooks/useAppSettings';
@@ -24,6 +22,7 @@ import { useAudioHaptics } from '../hooks/useAudioHaptics';
 import { useScannerBarcodeProcessor } from '../hooks/useScannerBarcodeProcessor';
 import { usePhotoCapture } from '../hooks/usePhotoCapture';
 import { usePermissions } from '../hooks/usePermissions';
+import { useScannerSessionBootstrap } from '../hooks/useScannerSessionBootstrap';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import TwoActionButtonsRow from '../components/TwoActionButtonsRow';
@@ -42,79 +41,35 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { settings, loadSettings } = useAppSettings();
-  const { session, setSession, loadSession } = useSession();
+  const { session, loadSession } = useSession();
   const { notification, showNotification, hideNotification } =
     useNotification();
   const { initializeSounds, triggerFeedback } = useAudioHaptics(settings);
   const { sessionId: routeSessionId } = route.params || {};
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
-    routeSessionId || null,
-  );
   const [isActive, setIsActive] = useState(true);
+
+  const { currentSessionId } = useScannerSessionBootstrap({
+    routeSessionId,
+    loadSettings,
+    initializeSounds,
+    loadSession,
+    onNoSessionSelected: () => {
+      Alert.alert(
+        t('scanner.noSessionSelected.title'),
+        t('scanner.noSessionSelected.message'),
+        [
+          {
+            text: t('scanner.noSessionSelected.goToSessions'),
+            onPress: () => navigation.replace('SessionsList'),
+          },
+        ],
+      );
+    },
+  });
 
   const devices = useCameraDevices();
   const device = devices.find(d => d.position === 'back');
   const cameraRef = useRef<Camera>(null);
-
-  useEffect(() => {
-    const initializeSession = async () => {
-      loadSettings();
-      initializeSounds();
-
-      let sessionIdToUse: number | null | undefined = routeSessionId;
-      console.log(
-        '🎯 ScannerScreen mounted with route sessionId:',
-        routeSessionId,
-      );
-
-      console.log(
-        'Session ID is ',
-        routeSessionId !== null && routeSessionId !== undefined
-          ? 'Valid'
-          : 'Null',
-      );
-      // If no sessionId in route params, check for active session
-      if (sessionIdToUse === null || sessionIdToUse === undefined) {
-        console.log(
-          '🔍 No sessionId in route params, checking for active session...',
-        );
-        const activeSessionId = await getActiveSessionId();
-        console.log('📋 Active session from storage:', activeSessionId);
-        sessionIdToUse = activeSessionId;
-      }
-
-      if (sessionIdToUse !== null && sessionIdToUse !== undefined) {
-        console.log('✅ Using sessionId:', sessionIdToUse);
-        setCurrentSessionId(sessionIdToUse);
-        // Load the session data
-        const sessionData = await loadSession(sessionIdToUse);
-        if (sessionData) {
-          console.log('📄 Session data loaded:', sessionData.name);
-          console.log('🎯 Expected code types:', sessionData.expectedCodeTypes);
-        } else {
-          console.log('❌ Failed to load session data for ID:', sessionIdToUse);
-        }
-        // Set this session as the active session when entering
-        console.log('🔧 Setting active session to:', sessionIdToUse);
-        setActiveSession(sessionIdToUse);
-      } else {
-        // No session ID provided or found, redirect to sessions list
-        console.log('❌ No sessionId provided or found in storage');
-        Alert.alert(
-          t('scanner.noSessionSelected.title'),
-          t('scanner.noSessionSelected.message'),
-          [
-            {
-              text: t('scanner.noSessionSelected.goToSessions'),
-              onPress: () => navigation.replace('SessionsList'),
-            },
-          ],
-        );
-      }
-    };
-
-    initializeSession();
-  }, [routeSessionId]);
 
   // Debug effect to track session updates
   useEffect(() => {

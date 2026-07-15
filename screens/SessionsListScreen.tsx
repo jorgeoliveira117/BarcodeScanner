@@ -7,21 +7,14 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import {
-  Button,
-  Text,
-  FAB,
-  IconButton,
-  Chip,
-  useTheme,
-  Icon,
-} from 'react-native-paper';
+import { Button, Text, FAB, useTheme } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Session } from '../utils/storage';
 import { setActiveSession } from '../utils/activeSession';
 import { useTranslation } from 'react-i18next';
 import { useSessions } from '../hooks/useSessions';
 import SessionCard from '../components/SessionCard';
+import AppScreenHeader from '../components/AppScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 
 type SessionsListScreenProps = NativeStackScreenProps<
@@ -57,10 +50,6 @@ const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
         },
       ],
     );
-  };
-
-  const handleGoBack = () => {
-    navigation.goBack();
   };
 
   const handleResumeSession = async (session: Session) => {
@@ -135,19 +124,10 @@ const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
 
   return (
     <View style={styles(theme).container}>
-      <View style={styles(theme).header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          iconColor="#F7F7FF"
-          onPress={handleGoBack}
-          style={styles(theme).backButton}
-        />
-        <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          {t('sessionList.title')}
-        </Text>
-        <View style={styles(theme).headerSpacer} />
-      </View>
+      <AppScreenHeader
+        title={t('sessionList.title')}
+        onBack={() => navigation.goBack()}
+      />
       {sessions.length > 0 && (
         <Text style={styles(theme).countText}>
           {sessions.length}{' '}
@@ -192,28 +172,6 @@ const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
 
 const styles = (theme: any) =>
   StyleSheet.create({
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 8,
-      paddingVertical: 12,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
-    },
-    backButton: {
-      margin: 0,
-    },
-    headerTitle: {
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center',
-    },
-    headerSpacer: {
-      width: 40, // Same width as back button to center the title
-    },
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,

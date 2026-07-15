@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Alert,
-  Share,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, FlatList, Alert, Share } from 'react-native';
 import {
   Button,
   Text,
@@ -30,6 +23,7 @@ import { RootStackParamList } from '../navigation/types';
 import BarcodeHistoryItem, {
   HistoryBarcodeItemData,
 } from '../components/BarcodeHistoryItem';
+import AppScreenHeader from '../components/AppScreenHeader';
 
 type HistoryScreenProps = NativeStackScreenProps<RootStackParamList, 'History'>;
 
@@ -72,10 +66,6 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
       const sessionBarcodes = await getBarcodesFromSession(sessionId);
       setBarcodes(sessionBarcodes);
     }
-  };
-
-  const handleGoBack = () => {
-    navigation.goBack();
   };
 
   const handleExport = async () => {
@@ -162,19 +152,10 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
 
   return (
     <View style={styles(theme).container}>
-      <View style={styles(theme).header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          iconColor="#F7F7FF"
-          onPress={handleGoBack}
-          style={styles(theme).backButton}
-        />
-        <Text style={styles(theme).headerTitle} variant="headlineSmall">
-          {t('history.title')}
-        </Text>
-        <View style={styles(theme).headerSpacer} />
-      </View>
+      <AppScreenHeader
+        title={t('history.title')}
+        onBack={() => navigation.goBack()}
+      />
       <View style={styles(theme).sessionCard}>
         <Text style={styles(theme).sessionTitle}>{session.name}</Text>
         <Text style={styles(theme).sessionLocation}>
@@ -246,28 +227,6 @@ const styles = (theme: any) =>
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: 8,
-      paddingVertical: 12,
-      paddingTop: Platform.OS === 'ios' ? 50 : 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
-    },
-    backButton: {
-      margin: 0,
-    },
-    headerTitle: {
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center',
-    },
-    headerSpacer: {
-      width: 40, // Same width as back button to center the title
     },
     loadingContainer: {
       flex: 1,
