@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, useTheme } from 'react-native-paper';
+import { Button } from 'react-native-paper';
 
 interface ActionButtonConfig {
   label: string;
@@ -19,14 +19,12 @@ interface TwoActionButtonsRowProps {
 }
 
 const TwoActionButtonsRow = ({ left, right }: TwoActionButtonsRowProps) => {
-  const theme = useTheme();
-
   return (
-    <View style={styles(theme).buttonContainer}>
+    <View style={styles.buttonContainer}>
       <Button
         mode={left.mode || 'outlined'}
         onPress={left.onPress}
-        style={styles(theme).button}
+        style={styles.button}
         icon={left.icon}
         textColor={left.textColor}
         buttonColor={left.buttonColor}
@@ -38,7 +36,7 @@ const TwoActionButtonsRow = ({ left, right }: TwoActionButtonsRowProps) => {
       <Button
         mode={right.mode || 'contained'}
         onPress={right.onPress}
-        style={styles(theme).button}
+        style={styles.button}
         icon={right.icon}
         textColor={right.textColor}
         buttonColor={right.buttonColor}
@@ -51,15 +49,14 @@ const TwoActionButtonsRow = ({ left, right }: TwoActionButtonsRowProps) => {
   );
 };
 
-const styles = (theme: any) =>
-  StyleSheet.create({
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    button: {
-      flex: 1,
-    },
-  });
+const styles = StyleSheet.create({
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+  },
+});
 
 export default TwoActionButtonsRow;

@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Platform, BackHandler } from 'react-native';
 import { Button, Text, useTheme, Icon } from 'react-native-paper';
-import { Session } from '../utils/storage';
 import { useActiveSession } from '../hooks/useActiveSession';
 import { useTranslation } from 'react-i18next';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import AppScreenHeader from '../components/AppScreenHeader';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -17,7 +17,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   useEffect(() => {
     loadActiveSession();
-  }, []);
+  }, [loadActiveSession]);
 
   // Add focus listener to refresh active session when returning to home
   useEffect(() => {
@@ -26,7 +26,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, loadActiveSession]);
 
   const handleResumeSession = () => {
     if (activeSession) {
@@ -56,100 +56,106 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   return (
     <View style={styles(theme).container}>
-      <Text variant="displaySmall" style={styles(theme).title}>
-        {t('home.title')}
-      </Text>
-      <Text variant="bodyMedium" style={styles(theme).subtitle}>
-        {t('home.description')}
-      </Text>
-      {activeSession && activeSessionData && (
-        <View style={styles(theme).activeSessionContainer}>
-          <Text style={styles(theme).activeSessionLabel}>
-            {t('home.sessionActiveLabel')}
-          </Text>
-          <Text style={styles(theme).activeSessionName}>
-            {activeSession.name}
-          </Text>
-          <View style={styles(theme).activeSessionDetails}>
-            <View style={styles(theme).detailItem}>
-              <Icon source="map-marker" size={16} />
-              <Text>{activeSession.location}</Text>
+      <AppScreenHeader
+        title={t('home.title')}
+        titleVariant="headlineMedium"
+        showBackButton={false}
+      />
+      <View style={styles(theme).content}>
+        <Text variant="bodyMedium" style={styles(theme).subtitle}>
+          {t('home.description')}
+        </Text>
+        {activeSession && activeSessionData && (
+          <View style={styles(theme).activeSessionContainer}>
+            <Text style={styles(theme).activeSessionLabel}>
+              {t('home.sessionActiveLabel')}
+            </Text>
+            <Text style={styles(theme).activeSessionName}>
+              {activeSession.name}
+            </Text>
+            <View style={styles(theme).activeSessionDetails}>
+              <View style={styles(theme).detailItem}>
+                <Icon source="map-marker" size={16} />
+                <Text>{activeSession.location}</Text>
+              </View>
+              <View style={styles(theme).detailItem}>
+                <Icon source="counter" size={16} />
+                <Text>
+                  {activeSession.barcodes.length}{' '}
+                  {activeSession.barcodes.length === 1
+                    ? t('home.sessionCodeLabel')
+                    : t('home.sessionCodesLabel')}
+                </Text>
+              </View>
             </View>
-            <View style={styles(theme).detailItem}>
-              <Icon source="counter" size={16} />
-              <Text>
-                {activeSession.barcodes.length}{' '}
-                {activeSession.barcodes.length === 1
-                  ? t('home.sessionCodeLabel')
-                  : t('home.sessionCodesLabel')}
-              </Text>
-            </View>
+            <Text style={styles(theme).lastAccessedText}>
+              {t('home.sessionLastAccessedLabel')}{' '}
+              {formatLastAccessed(activeSessionData.lastAccessed)}
+            </Text>
           </View>
-          <Text style={styles(theme).lastAccessedText}>
-            {t('home.sessionLastAccessedLabel')}{' '}
-            {formatLastAccessed(activeSessionData.lastAccessed)}
-          </Text>
-        </View>
-      )}
+        )}
 
-      <View style={styles(theme).buttonContainer}>
-        <Button
-          mode="contained"
-          onPress={handleResumeSession}
-          style={[
-            styles(theme).button,
-            activeSession
-              ? styles(theme).resumeButtonActive
-              : styles(theme).resumeButtonInactive,
-          ]}
-          icon={activeSession ? 'play' : 'view-list'}
-          disabled={!activeSession}
-        >
-          {activeSession
-            ? t('home.scannerButtonResume')
-            : t('home.scannerButtonNone')}
-        </Button>
+        <View style={styles(theme).buttonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleResumeSession}
+            style={[
+              styles(theme).button,
+              activeSession
+                ? styles(theme).resumeButtonActive
+                : styles(theme).resumeButtonInactive,
+            ]}
+            icon={activeSession ? 'play' : 'view-list'}
+            disabled={!activeSession}
+          >
+            {activeSession
+              ? t('home.scannerButtonResume')
+              : t('home.scannerButtonNone')}
+          </Button>
 
-        <Button
-          mode="contained"
-          onPress={() => navigation.navigate('SessionForm', { mode: 'create' })}
-          style={styles(theme).button}
-          icon="plus"
-        >
-          {t('home.createSessionButton')}
-        </Button>
-
-        <Button
-          mode="outlined"
-          onPress={() => navigation.navigate('SessionsList')}
-          style={styles(theme).button}
-          icon="view-list"
-        >
-          {t('home.sessionsListButton')}
-        </Button>
-
-        <Button
-          mode="outlined"
-          onPress={() => navigation.navigate('Settings')}
-          style={styles(theme).button}
-          icon="cog"
-        >
-          {t('home.settingsButton')}
-        </Button>
-
-        <Button
-          mode="outlined"
-          onPress={() => {
-            // Exit the app
-            if (Platform.OS === 'android') {
-              BackHandler.exitApp();
+          <Button
+            mode="contained"
+            onPress={() =>
+              navigation.navigate('SessionForm', { mode: 'create' })
             }
-          }}
-          style={styles(theme).button}
-          icon="exit-to-app"
-        >
-          {t('home.exitButton')}
-        </Button>
+            style={styles(theme).button}
+            icon="plus"
+          >
+            {t('home.createSessionButton')}
+          </Button>
+
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('SessionsList')}
+            style={styles(theme).button}
+            icon="view-list"
+          >
+            {t('home.sessionsListButton')}
+          </Button>
+
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('Settings')}
+            style={styles(theme).button}
+            icon="cog"
+          >
+            {t('home.settingsButton')}
+          </Button>
+
+          <Button
+            mode="outlined"
+            onPress={() => {
+              // Exit the app
+              if (Platform.OS === 'android') {
+                BackHandler.exitApp();
+              }
+            }}
+            style={styles(theme).button}
+            icon="exit-to-app"
+          >
+            {t('home.exitButton')}
+          </Button>
+        </View>
       </View>
     </View>
   );
@@ -157,18 +163,18 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
 const styles = (theme: any) =>
   StyleSheet.create({
-    title: {
-      textAlign: 'center',
-      color: theme.colors.text,
-    },
     subtitle: {
       textAlign: 'center',
       color: theme.colors.text,
+      marginBottom: 12,
     },
     container: {
       flex: 1,
-      padding: 20,
       backgroundColor: theme.colors.background,
+    },
+    content: {
+      flex: 1,
+      padding: 20,
     },
     card: {
       marginBottom: 30,

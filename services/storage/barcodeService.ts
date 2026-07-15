@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 
 import { getSessionById, getSessions } from './sessionService';
-import { Barcode, SESSIONS_KEY, Session } from './types';
+import { Barcode, SESSIONS_KEY } from './types';
 
 export const addBarcodeToSession = async (
   sessionId: number,

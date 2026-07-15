@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { CodeType } from 'react-native-vision-camera';
@@ -72,7 +72,10 @@ export const useSessionForm = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<SessionFormErrors>(DEFAULT_ERRORS);
 
-  const effectiveCodesToIgnore = showIgnoreCodesSection ? codesToIgnore : [];
+  const effectiveCodesToIgnore = useMemo(
+    () => (showIgnoreCodesSection ? codesToIgnore : []),
+    [showIgnoreCodesSection, codesToIgnore],
+  );
 
   const validateForm = useCallback(() => {
     const newErrors: SessionFormErrors = {
@@ -305,13 +308,17 @@ export const useSessionForm = ({
 
   const toggleCodeType = useCallback((type: CodeType) => {
     setExpectedCodeTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
+      prev.includes(type)
+        ? prev.filter(selectedType => selectedType !== type)
+        : [...prev, type],
     );
   }, []);
 
   const toggleIgnoreCodeType = useCallback((type: CodeType) => {
     setCodesToIgnore(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
+      prev.includes(type)
+        ? prev.filter(selectedType => selectedType !== type)
+        : [...prev, type],
     );
   }, []);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import {
   Camera,
@@ -46,7 +46,6 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
     useNotification();
   const { initializeSounds, triggerFeedback } = useAudioHaptics(settings);
   const { sessionId: routeSessionId } = route.params || {};
-  const [isActive, setIsActive] = useState(true);
 
   const { currentSessionId } = useScannerSessionBootstrap({
     routeSessionId,
@@ -147,7 +146,7 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
     session,
     sanitizeFileNamePart,
   });
-  const { isScanningActive, onCodeScanned, handleDeleteLatestBarcode } =
+  const { onCodeScanned, handleDeleteLatestBarcode } =
     useScannerBarcodeProcessor({
       currentSessionId,
       session,
@@ -273,7 +272,7 @@ const ScannerScreen = ({ route, navigation }: ScannerScreenProps) => {
         ref={cameraRef}
         style={styles(theme).camera}
         device={device}
-        isActive={isActive}
+        isActive={true}
         codeScanner={codeScanner}
         photo={true}
       />

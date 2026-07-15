@@ -4,26 +4,32 @@ import { IconButton, Text, useTheme } from 'react-native-paper';
 
 interface AppScreenHeaderProps {
   title: string;
-  onBack: () => void;
+  onBack?: () => void;
   titleVariant?: 'headlineSmall' | 'headlineMedium';
+  showBackButton?: boolean;
 }
 
 const AppScreenHeader = ({
   title,
   onBack,
   titleVariant = 'headlineSmall',
+  showBackButton = true,
 }: AppScreenHeaderProps) => {
   const theme = useTheme();
 
   return (
     <View style={styles(theme).header}>
-      <IconButton
-        icon="arrow-left"
-        size={24}
-        iconColor="#F7F7FF"
-        onPress={onBack}
-        style={styles(theme).backButton}
-      />
+      {showBackButton ? (
+        <IconButton
+          icon="arrow-left"
+          size={24}
+          iconColor="#F7F7FF"
+          onPress={onBack}
+          style={styles(theme).backButton}
+        />
+      ) : (
+        <View style={styles(theme).headerSpacer} />
+      )}
       <Text style={styles(theme).headerTitle} variant={titleVariant}>
         {title}
       </Text>

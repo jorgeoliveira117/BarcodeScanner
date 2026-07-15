@@ -33,7 +33,7 @@ const SessionsListScreen = ({ navigation }: SessionsListScreenProps) => {
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, loadSessions]);
 
   const handleDeleteSession = (sessionId: number) => {
     Alert.alert(

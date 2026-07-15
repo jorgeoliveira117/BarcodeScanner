@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Alert, Share } from 'react-native';
 import {
   Button,
@@ -14,7 +14,6 @@ import {
   removeBarcodeFromSession,
   exportSessionToCSV,
   exportSessionToJSON,
-  Session,
 } from '../utils/storage';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../hooks/useSession';
@@ -38,6 +37,17 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
   >([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const loadSessionData = useCallback(async () => {
+    if (sessionId === null || sessionId === undefined) return;
+
+    const sessionData = await loadSession(sessionId);
+
+    if (sessionData) {
+      const sessionBarcodes = await getBarcodesFromSession(sessionId);
+      setBarcodes(sessionBarcodes);
+    }
+  }, [loadSession, sessionId]);
+
   useEffect(() => {
     if (sessionId !== null && sessionId !== undefined) {
       loadSessionData();
@@ -45,7 +55,7 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
       // If no sessionId provided, redirect to sessions list
       navigation.replace('SessionsList');
     }
-  }, [sessionId]);
+  }, [loadSessionData, navigation, sessionId]);
 
   useEffect(() => {
     // Filter barcodes based on search query
@@ -56,17 +66,6 @@ const HistoryScreen = ({ route, navigation }: HistoryScreenProps) => {
     );
     setFilteredBarcodes(filtered);
   }, [searchQuery, barcodes]);
-
-  const loadSessionData = async () => {
-    if (sessionId === null || sessionId === undefined) return;
-
-    const sessionData = await loadSession(sessionId);
-
-    if (sessionData) {
-      const sessionBarcodes = await getBarcodesFromSession(sessionId);
-      setBarcodes(sessionBarcodes);
-    }
-  };
 
   const handleExport = async () => {
     if (sessionId === null || sessionId === undefined) return;

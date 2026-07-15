@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 import { Camera } from 'react-native-vision-camera';

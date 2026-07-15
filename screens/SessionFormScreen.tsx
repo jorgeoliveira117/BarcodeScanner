@@ -1,14 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import {
-  Button,
   TextInput,
   Text,
   Switch,
   HelperText,
   useTheme,
 } from 'react-native-paper';
-import { BARCODE_TYPES, Session } from '../utils/storage';
+import { BARCODE_TYPES } from '../utils/storage';
 import { useTranslation } from 'react-i18next';
 import { useSessionForm } from '../hooks/useSessionForm';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
