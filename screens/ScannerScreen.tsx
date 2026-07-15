@@ -938,7 +938,7 @@ const ScannerScreen = ({ route, navigation }: any) => {
             icon="camera"
             textColor="#fff"
           >
-            Take Back Picture
+            {t('scanner.takeBackPicture')}
           </Button>
           <View style={styles(theme).buttonContainer}>
             <Button

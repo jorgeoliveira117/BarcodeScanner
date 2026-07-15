@@ -187,6 +187,7 @@ export default {
     delete: 'Delete',
     back: 'Back',
     viewHistory: 'View History',
+    takeBackPicture: 'Take Back Picture',
     noSessionSelected: {
       title: 'No Session Selected',
       message: 'Please select a session to start scanning.',

@@ -197,6 +197,7 @@ export default {
     delete: 'Elimina',
     back: 'Indietro',
     viewHistory: 'Visualizza Cronologia',
+    takeBackPicture: 'Scatta Foto Retro',
     noSessionSelected: {
       title: 'Nessuna Sessione Selezionata',
       message: 'Per favore seleziona una sessione per iniziare la scansione.',
