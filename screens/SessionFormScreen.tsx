@@ -27,6 +27,7 @@ import {
   validateSessionCodes,
   GPSLocation,
 } from '../utils/storage';
+import { requestStoragePermission } from '../utils/permissions';
 import { CodeType } from 'react-native-vision-camera';
 import { useTranslation } from 'react-i18next';
 
@@ -64,7 +65,7 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     session?.codesToIgnore || [],
   );
   const [autosavePictures, setAutosavePictures] = useState(
-    session?.autosavePictures || false,
+    session?.autosavePictures ?? true,
   );
   const [isLoading, setIsLoading] = useState(false);
 
@@ -141,6 +142,42 @@ const SessionFormScreen = ({ route, navigation }: SessionFormScreenProps) => {
     }
     return true; // iOS handles permissions through Info.plist
   };
+
+  const ensureStoragePermission = async () => {
+    return requestStoragePermission(
+      {
+        title: t('scanner.permissions.storage.title'),
+        message: t('scanner.permissions.storage.message'),
+        askMeLater: t('scanner.permissions.storage.askMeLater'),
+        cancel: t('alert.cancel'),
+        ok: t('alert.ok'),
+        denyTitle: t('scanner.permissions.storage.denyTitle'),
+        denyMessage: t('scanner.permissions.storage.denyMessage'),
+        errorTitle: t('scanner.permissions.storage.errorTitle'),
+        errorMessage: t('scanner.permissions.storage.errorMessage'),
+      },
+      {
+        showDeniedAlert: true,
+        showErrorAlert: true,
+        showSuccessAlert: false,
+      },
+    );
+  };
+
+  useEffect(() => {
+    const syncAutosavePermission = async () => {
+      if (!autosavePictures) {
+        return;
+      }
+
+      const hasPermission = await ensureStoragePermission();
+      if (!hasPermission) {
+        setAutosavePictures(false);
+      }
+    };
+
+    syncAutosavePermission();
+  }, [autosavePictures]);
 
   const getCurrentLocation = async () => {
     const hasPermission = await requestLocationPermission();

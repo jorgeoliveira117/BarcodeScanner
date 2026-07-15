@@ -29,6 +29,7 @@ import {
 } from '../utils/storage';
 import { getSettings, AppSettings } from '../utils/settings';
 import { setActiveSession, getActiveSessionId } from '../utils/activeSession';
+import { requestStoragePermission as requestSharedStoragePermission } from '../utils/permissions';
 import RNFS from 'react-native-fs';
 import Sound from 'react-native-sound';
 import { useTranslation } from 'react-i18next';
@@ -456,73 +457,31 @@ const ScannerScreen = ({ route, navigation }: any) => {
   };
 
   const requestStoragePermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        console.log('Requesting storage permission...');
+    console.log('Requesting storage permission...');
+    const hasPermission = await requestSharedStoragePermission(
+      {
+        title: t('scanner.permissions.storage.title'),
+        message: t('scanner.permissions.storage.message'),
+        askMeLater: t('scanner.permissions.storage.askMeLater'),
+        cancel: t('alert.cancel'),
+        ok: t('alert.ok'),
+        denyTitle: t('scanner.permissions.storage.denyTitle'),
+        denyMessage: t('scanner.permissions.storage.denyMessage'),
+        errorTitle: t('scanner.permissions.storage.errorTitle'),
+        errorMessage: t('scanner.permissions.storage.errorMessage'),
+        successTitle: t('scanner.permissions.storage.successTitle'),
+        successMessage: t('scanner.permissions.storage.successMessage'),
+      },
+      {
+        showDeniedAlert: true,
+        showErrorAlert: true,
+        showSuccessAlert: true,
+      },
+    );
 
-        // For Android 13+ (API 33+), we need READ_MEDIA_IMAGES instead of WRITE_EXTERNAL_STORAGE
-        const permission =
-          Platform.Version >= 33
-            ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
-            : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-
-        console.log('Using permission:', permission);
-
-        // First check if we already have permission
-        const currentPermission = await PermissionsAndroid.check(permission);
-        console.log('Current permission status:', currentPermission);
-
-        if (currentPermission) {
-          console.log('Storage permission already granted');
-          setHasStoragePermission(true);
-          return true;
-        }
-
-        // If not, request permission
-        console.log('Requesting new permission...');
-        const granted = await PermissionsAndroid.request(permission, {
-          title: t('scanner.permissions.storage.title'),
-          message: t('scanner.permissions.storage.message'),
-          buttonNeutral: t('scanner.permissions.storage.askMeLater'),
-          buttonNegative: t('alert.cancel'),
-          buttonPositive: t('alert.ok'),
-        });
-
-        console.log('Permission request result:', granted);
-        const hasPermission = granted === PermissionsAndroid.RESULTS.GRANTED;
-        console.log('Final permission status:', hasPermission);
-
-        setHasStoragePermission(hasPermission);
-
-        // Show feedback to user
-        if (hasPermission) {
-          Alert.alert(
-            t('scanner.permissions.storage.successTitle'),
-            t('scanner.permissions.storage.successMessage'),
-          );
-        } else {
-          Alert.alert(
-            t('scanner.permissions.storage.denyTitle'),
-            t('scanner.permissions.storage.denyMessage'),
-          );
-        }
-
-        return hasPermission;
-      } catch (err) {
-        console.warn('Storage permission error:', err);
-        Alert.alert(
-          t('scanner.permissions.storage.errorTitle'),
-          t('scanner.permissions.storage.errorMessage'),
-        );
-        setHasStoragePermission(false);
-        return false;
-      }
-    }
-
-    // iOS doesn't need explicit storage permission for app documents
-    console.log('iOS detected - setting storage permission to true');
-    setHasStoragePermission(true);
-    return true;
+    console.log('Final permission status:', hasPermission);
+    setHasStoragePermission(hasPermission);
+    return hasPermission;
   };
 
   useEffect(() => {
